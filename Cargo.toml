@@ -1,0 +1,15 @@
+[package]
+name = "tauri-runtime-verso"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+members = ["examples/helloworld"]
+
+[dependencies]
+verso = { path = "../verso/verso" }
+tauri-runtime = "2"
+tauri-utils = "2"
+raw-window-handle = "0.6"
+windows = "0.58"
+url = "2"
