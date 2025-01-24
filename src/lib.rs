@@ -40,7 +40,7 @@ enum Message {
 
 struct Window {
     label: String,
-    webviews: Vec<VersoviewController>,
+    webview: VersoviewController,
 }
 
 #[derive(Clone)]
@@ -112,7 +112,7 @@ impl RuntimeContext {
         );
         let window = Window {
             label: label.clone(),
-            webviews: vec![webview],
+            webview,
         };
 
         self.windows.lock().unwrap().insert(window_id, window);
@@ -241,7 +241,7 @@ impl<T: UserEvent> RuntimeHandle<T> for MockRuntimeHandle {
     }
 
     fn cursor_position(&self) -> Result<PhysicalPosition<f64>> {
-        Ok(PhysicalPosition::new(0.0, 0.0))
+        todo!()
     }
 
     fn display_handle(
