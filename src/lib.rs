@@ -22,7 +22,7 @@ use windows::Win32::Foundation::HWND;
 use std::{
     cell::RefCell,
     collections::HashMap,
-    fmt,
+    fmt::{self, Debug},
     sync::{
         atomic::{AtomicBool, AtomicU32, Ordering},
         mpsc::{channel, sync_channel, Receiver, SyncSender},
@@ -40,7 +40,7 @@ enum Message {
 
 struct Window {
     label: String,
-    webview: VersoviewController,
+    webview: Arc<Mutex<VersoviewController>>,
 }
 
 #[derive(Clone)]
@@ -110,9 +110,27 @@ impl RuntimeContext {
             "../verso/target/debug/versoview.exe",
             Url::parse(&pending_webview.url).unwrap(),
         );
+        webview.on_web_resource_requested(move |request, response_fn| {
+            dbg!(&request);
+            for (scheme, handler) in &pending_webview.uri_scheme_protocols {
+                if is_custom_protocol_uri(&request.request.uri().to_string(), "http", &scheme) {
+                    handler(
+                        "",
+                        request.request,
+                        Box::new(move |response| {
+                            response_fn(Some(response.map(|body| body.to_vec())));
+                        }),
+                    );
+                    return;
+                }
+            }
+            response_fn(None);
+        });
+
+        let webview = Arc::new(Mutex::new(webview));
         let window = Window {
             label: label.clone(),
-            webview,
+            webview: webview.clone(),
         };
 
         self.windows.lock().unwrap().insert(window_id, window);
@@ -130,6 +148,7 @@ impl RuntimeContext {
                     dispatcher: MockWebviewDispatcher {
                         id: webview_id,
                         context: self.clone(),
+                        webview: webview.clone(),
                         url: Arc::new(Mutex::new(pending_webview.url)),
                     },
                 },
@@ -137,6 +156,22 @@ impl RuntimeContext {
             }),
         })
     }
+}
+
+// Copied from wry
+fn is_custom_protocol_uri(uri: &str, http_or_https: &'static str, protocol: &str) -> bool {
+    let uri_len = uri.len();
+    let scheme_len = http_or_https.len();
+    let protocol_len = protocol.len();
+
+    // starts with `http` or `https``
+    &uri[..scheme_len] == http_or_https
+    // followed by `://`
+    && &uri[scheme_len..scheme_len + 3] == "://"
+    // followed by custom protocol name
+    && scheme_len + 3 + protocol_len < uri_len && &uri[scheme_len + 3.. scheme_len + 3 + protocol_len] == protocol
+    // and a dot
+    && scheme_len + 3 + protocol_len < uri_len && uri.as_bytes()[scheme_len + 3 + protocol_len] == b'.'
 }
 
 impl fmt::Debug for RuntimeContext {
@@ -251,11 +286,23 @@ impl<T: UserEvent> RuntimeHandle<T> for MockRuntimeHandle {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct MockWebviewDispatcher {
     id: u32,
     context: RuntimeContext,
+    webview: Arc<Mutex<VersoviewController>>,
     url: Arc<Mutex<String>>,
+}
+
+impl Debug for MockWebviewDispatcher {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("MockWebviewDispatcher")
+            .field("id", &self.id)
+            .field("context", &self.context)
+            .field("webview", &"VersoviewController")
+            .field("url", &self.url)
+            .finish()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -465,6 +512,12 @@ impl<T: UserEvent> WebviewDispatch<T> for MockWebviewDispatcher {
     }
 
     fn eval_script<S: Into<String>>(&self, script: S) -> Result<()> {
+        // TODO: Find a good enum value to map and propagate the error
+        self.webview
+            .lock()
+            .unwrap()
+            .execute_script(script.into())
+            .unwrap();
         Ok(())
     }
 
