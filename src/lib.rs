@@ -110,12 +110,21 @@ impl RuntimeContext {
             "../verso/target/debug/versoview.exe",
             Url::parse(&pending_webview.url).unwrap(),
         );
-        webview.on_web_resource_requested(move |request, response_fn| {
+        let webview_label = label.clone();
+        webview.on_web_resource_requested(move |mut request, response_fn| {
             dbg!(&request);
+            // TODO: Servo's EmbedderMsg::WebResourceRequested message is sent too early
+            // that it doesn't include Origin header, so I hard coded this for now
+            if !request.request.headers().contains_key("Origin") {
+                request
+                    .request
+                    .headers_mut()
+                    .insert("Origin", "http://tauri.localhost/".parse().unwrap());
+            }
             for (scheme, handler) in &pending_webview.uri_scheme_protocols {
                 if is_custom_protocol_uri(&request.request.uri().to_string(), "http", &scheme) {
                     handler(
-                        "",
+                        &webview_label,
                         request.request,
                         Box::new(move |response| {
                             response_fn(Some(response.map(|body| body.to_vec())));
