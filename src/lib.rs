@@ -23,12 +23,41 @@ use std::{
     cell::RefCell,
     collections::HashMap,
     fmt::{self, Debug},
+    path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, AtomicU32, Ordering},
         mpsc::{channel, sync_channel, Receiver, SyncSender},
-        Arc, Mutex,
+        Arc, Mutex, OnceLock,
     },
 };
+
+static VERSO_PATH: OnceLock<PathBuf> = OnceLock::new();
+
+/// Sets the Verso executable path to ues for the webviews,
+/// much be called before you create any webviews
+///
+/// ### Example:
+///
+/// ```
+/// fn main() {
+/// set_verso_path("../verso/target/debug/versoview.exe".into());
+/// tauri::Builder::<tauri_runtime_verso::MockRuntime>::new()
+///     .invoke_handler(tauri::generate_handler![greet])
+///     .run(tauri::generate_context!())
+///     .expect("error while running tauri application");
+/// }
+/// ```
+pub fn set_verso_path(path: PathBuf) {
+    VERSO_PATH
+        .set(path)
+        .expect("Verso path is already set, you can't set it multiple times");
+}
+
+fn get_verso_path() -> &'static Path {
+    VERSO_PATH
+        .get()
+        .expect("Verso path not set! You need to call set_verso_path before creating any webviews!")
+}
 
 type ShortcutMap = HashMap<String, Box<dyn Fn() + Send + 'static>>;
 
@@ -106,10 +135,8 @@ impl RuntimeContext {
         let window_id = self.next_window_id();
         let webview_id = self.next_webview_id();
 
-        let webview = VersoviewController::new(
-            "../verso/target/debug/versoview.exe",
-            Url::parse(&pending_webview.url).unwrap(),
-        );
+        let webview =
+            VersoviewController::new(get_verso_path(), Url::parse(&pending_webview.url).unwrap());
         let webview_label = label.clone();
         webview.on_web_resource_requested(move |mut request, response_fn| {
             dbg!(&request);
