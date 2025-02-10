@@ -9,7 +9,7 @@ fn greet(name: &str) -> String {
 
 fn main() {
     set_verso_path("../verso/target/debug/versoview.exe".into());
-    tauri::Builder::<tauri_runtime_verso::MockRuntime>::new()
+    tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
         .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

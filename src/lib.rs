@@ -40,11 +40,10 @@ static VERSO_PATH: OnceLock<PathBuf> = OnceLock::new();
 ///
 /// ```
 /// fn main() {
-/// set_verso_path("../verso/target/debug/versoview.exe".into());
-/// tauri::Builder::<tauri_runtime_verso::MockRuntime>::new()
-///     .invoke_handler(tauri::generate_handler![greet])
-///     .run(tauri::generate_context!())
-///     .expect("error while running tauri application");
+///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview.exe".into());
+///     tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
+///         .run(tauri::generate_context!())
+///         .unwrap();
 /// }
 /// ```
 pub fn set_verso_path(path: PathBuf) {
@@ -120,8 +119,8 @@ impl RuntimeContext {
         T: UserEvent,
         R: Runtime<
             T,
-            WindowDispatcher = MockWindowDispatcher,
-            WebviewDispatcher = MockWebviewDispatcher,
+            WindowDispatcher = VersoWindowDispatcher,
+            WebviewDispatcher = VersoWebviewDispatcher,
         >,
         F: Fn(RawWindow<'_>) + Send + 'static,
     >(
@@ -174,14 +173,14 @@ impl RuntimeContext {
         Ok(DetachedWindow {
             id: window_id,
             label: label.clone(),
-            dispatcher: MockWindowDispatcher {
+            dispatcher: VersoWindowDispatcher {
                 id: window_id,
                 context: self.clone(),
             },
             webview: Some(DetachedWindowWebview {
                 webview: DetachedWebview {
                     label: label.clone(),
-                    dispatcher: MockWebviewDispatcher {
+                    dispatcher: VersoWebviewDispatcher {
                         id: webview_id,
                         context: self.clone(),
                         webview: webview.clone(),
@@ -217,12 +216,12 @@ impl fmt::Debug for RuntimeContext {
 }
 
 #[derive(Debug, Clone)]
-pub struct MockRuntimeHandle {
+pub struct VersoRuntimeHandle {
     context: RuntimeContext,
 }
 
-impl<T: UserEvent> RuntimeHandle<T> for MockRuntimeHandle {
-    type Runtime = MockRuntime;
+impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle {
+    type Runtime = VersoRuntime;
 
     fn create_proxy(&self) -> EventProxy {
         EventProxy {}
@@ -323,16 +322,16 @@ impl<T: UserEvent> RuntimeHandle<T> for MockRuntimeHandle {
 }
 
 #[derive(Clone)]
-pub struct MockWebviewDispatcher {
+pub struct VersoWebviewDispatcher {
     id: u32,
     context: RuntimeContext,
     webview: Arc<Mutex<VersoviewController>>,
     url: Arc<Mutex<String>>,
 }
 
-impl Debug for MockWebviewDispatcher {
+impl Debug for VersoWebviewDispatcher {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("MockWebviewDispatcher")
+        f.debug_struct("VersoWebviewDispatcher")
             .field("id", &self.id)
             .field("context", &self.context)
             .field("webview", &"VersoviewController")
@@ -342,17 +341,17 @@ impl Debug for MockWebviewDispatcher {
 }
 
 #[derive(Debug, Clone)]
-pub struct MockWindowDispatcher {
+pub struct VersoWindowDispatcher {
     id: WindowId,
     context: RuntimeContext,
 }
 
 #[derive(Debug, Clone)]
-pub struct MockWindowBuilder {}
+pub struct VersoWindowBuilder {}
 
-impl WindowBuilderBase for MockWindowBuilder {}
+impl WindowBuilderBase for VersoWindowBuilder {}
 
-impl WindowBuilder for MockWindowBuilder {
+impl WindowBuilder for VersoWindowBuilder {
     fn new() -> Self {
         Self {}
     }
@@ -525,8 +524,8 @@ impl WindowBuilder for MockWindowBuilder {
     }
 }
 
-impl<T: UserEvent> WebviewDispatch<T> for MockWebviewDispatcher {
-    type Runtime = MockRuntime;
+impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher {
+    type Runtime = VersoRuntime;
 
     fn run_on_main_thread<F: FnOnce() + Send + 'static>(&self, f: F) -> Result<()> {
         self.context.send_message(Message::Task(Box::new(f)))
@@ -642,10 +641,10 @@ impl<T: UserEvent> WebviewDispatch<T> for MockWebviewDispatcher {
     }
 }
 
-impl<T: UserEvent> WindowDispatch<T> for MockWindowDispatcher {
-    type Runtime = MockRuntime;
+impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
+    type Runtime = VersoRuntime;
 
-    type WindowBuilder = MockWindowBuilder;
+    type WindowBuilder = VersoWindowBuilder;
 
     fn run_on_main_thread<F: FnOnce() + Send + 'static>(&self, f: F) -> Result<()> {
         self.context.send_message(Message::Task(Box::new(f)))
@@ -989,13 +988,13 @@ impl<T: UserEvent> EventLoopProxy<T> for EventProxy {
 }
 
 #[derive(Debug)]
-pub struct MockRuntime {
+pub struct VersoRuntime {
     is_running: Arc<AtomicBool>,
     pub context: RuntimeContext,
     run_rx: Receiver<Message>,
 }
 
-impl MockRuntime {
+impl VersoRuntime {
     fn init() -> Self {
         let is_running = Arc::new(AtomicBool::new(false));
         let (tx, rx) = sync_channel(256);
@@ -1016,10 +1015,10 @@ impl MockRuntime {
     }
 }
 
-impl<T: UserEvent> Runtime<T> for MockRuntime {
-    type WindowDispatcher = MockWindowDispatcher;
-    type WebviewDispatcher = MockWebviewDispatcher;
-    type Handle = MockRuntimeHandle;
+impl<T: UserEvent> Runtime<T> for VersoRuntime {
+    type WindowDispatcher = VersoWindowDispatcher;
+    type WebviewDispatcher = VersoWebviewDispatcher;
+    type Handle = VersoRuntimeHandle;
     type EventLoopProxy = EventProxy;
 
     fn new(_args: RuntimeInitArgs) -> Result<Self> {
@@ -1036,7 +1035,7 @@ impl<T: UserEvent> Runtime<T> for MockRuntime {
     }
 
     fn handle(&self) -> Self::Handle {
-        MockRuntimeHandle {
+        VersoRuntimeHandle {
             context: self.context.clone(),
         }
     }
