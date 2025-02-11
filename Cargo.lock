@@ -3847,6 +3847,7 @@ name = "verso"
 version = "0.0.1"
 dependencies = [
  "bincode",
+ "dpi",
  "http",
  "ipc-channel",
  "log",
@@ -3859,6 +3860,7 @@ dependencies = [
 name = "versoview_messages"
 version = "0.0.1"
 dependencies = [
+ "dpi",
  "headers",
  "http",
  "http-serde-ext",

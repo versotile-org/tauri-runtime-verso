@@ -3,9 +3,14 @@
 use tauri_runtime_verso::set_verso_path;
 
 #[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello {name}, You have been greeted from Rust!")
+fn greet() -> String {
+    format!("Hello, You have been greeted from Rust!")
 }
+
+// #[tauri::command]
+// fn greet(name: &str) -> String {
+//     format!("Hello {name}, You have been greeted from Rust!")
+// }
 
 fn main() {
     set_verso_path("../verso/target/debug/versoview.exe".into());

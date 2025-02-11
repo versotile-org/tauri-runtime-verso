@@ -24,6 +24,7 @@ use std::{
     cell::RefCell,
     collections::HashMap,
     fmt::{self, Debug},
+    fs,
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, AtomicU32, Ordering},
@@ -135,8 +136,23 @@ impl RuntimeContext {
         let window_id = self.next_window_id();
         let webview_id = self.next_webview_id();
 
-        let webview =
-            VersoviewController::new(get_verso_path(), Url::parse(&pending_webview.url).unwrap());
+        // TODO: Remove this after https://github.com/servo/servo/pull/35388
+        fs::remove_dir_all("./userscripts").unwrap();
+        let mut x = 1;
+        for init_script in pending_webview.webview_attributes.initialization_scripts {
+            fs::write(format!("./userscripts/{x}.js"), init_script).unwrap();
+            x += 1;
+        }
+
+        let webview = VersoviewController::new_with_settings(
+            get_verso_path(),
+            Url::parse(&pending_webview.url).unwrap(),
+            verso::VersoviewSettings {
+                userscripts_directory: Some("./userscripts".to_owned()),
+                with_panel: false,
+                ..Default::default()
+            },
+        );
         let webview_label = label.clone();
         webview.on_web_resource_requested(move |mut request, response_fn| {
             dbg!(&request);
@@ -162,6 +178,10 @@ impl RuntimeContext {
             }
             response_fn(None);
         });
+        // for init_script in pending_webview.webview_attributes.initialization_scripts {
+        //     webview.add_init_script(init_script);
+        // }
+        // webview.add_init_script("console.log('1')".to_owned());
 
         let webview = Arc::new(Mutex::new(webview));
         let window = Window {

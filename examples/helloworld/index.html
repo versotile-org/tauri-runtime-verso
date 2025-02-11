@@ -20,7 +20,7 @@
 
     <p id="message"></p>
 
-    <!-- <script>
+    <script>
       const { invoke } = window.__TAURI__.core
 
       const form = document.querySelector('#form')
@@ -34,6 +34,6 @@
         const newMessage = await invoke('greet', { name })
         messageEl.textContent = newMessage
       })
-    </script> -->
+    </script>
   </body>
 </html>
