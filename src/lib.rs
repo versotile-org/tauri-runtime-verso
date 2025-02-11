@@ -17,6 +17,7 @@ use tauri_runtime::{
 use tauri_utils::{config::WindowConfig, Theme};
 use url::Url;
 use verso::VersoviewController;
+#[cfg(windows)]
 use windows::Win32::Foundation::HWND;
 
 use std::{
@@ -290,26 +291,6 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle {
         Ok(())
     }
 
-    #[cfg(target_os = "android")]
-    fn find_class<'a>(
-        &self,
-        env: &mut jni::JNIEnv<'a>,
-        activity: &jni::objects::JObject<'_>,
-        name: impl Into<String>,
-    ) -> std::result::Result<jni::objects::JClass<'a>, jni::errors::Error> {
-        todo!()
-    }
-
-    #[cfg(target_os = "android")]
-    fn run_on_android_context<F>(&self, f: F)
-    where
-        F: FnOnce(&mut jni::JNIEnv, &jni::objects::JObject, &jni::objects::JObject)
-            + Send
-            + 'static,
-    {
-        todo!()
-    }
-
     fn cursor_position(&self) -> Result<PhysicalPosition<f64>> {
         todo!()
     }
@@ -511,10 +492,12 @@ impl WindowBuilder for VersoWindowBuilder {
         self
     }
 
+    #[cfg(windows)]
     fn owner(self, owner: HWND) -> Self {
         todo!()
     }
 
+    #[cfg(windows)]
     fn parent(self, parent: HWND) -> Self {
         todo!()
     }
