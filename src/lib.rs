@@ -21,7 +21,6 @@ use verso::VersoviewController;
 use windows::Win32::Foundation::HWND;
 
 use std::{
-    cell::RefCell,
     collections::HashMap,
     fmt::{self, Debug},
     fs,
@@ -137,7 +136,12 @@ impl RuntimeContext {
         let webview_id = self.next_webview_id();
 
         // TODO: Remove this after https://github.com/servo/servo/pull/35388
-        fs::remove_dir_all("./userscripts").unwrap();
+        if let Ok(files) = fs::read_dir("./userscripts") {
+            for file in files {
+                fs::remove_file(file.unwrap().path()).unwrap()
+            }
+        }
+        fs::create_dir_all("./userscripts").unwrap();
         let mut x = 1;
         for init_script in pending_webview.webview_attributes.initialization_scripts {
             fs::write(format!("./userscripts/{x}.js"), init_script).unwrap();
@@ -149,13 +153,14 @@ impl RuntimeContext {
             Url::parse(&pending_webview.url).unwrap(),
             verso::VersoviewSettings {
                 userscripts_directory: Some("./userscripts".to_owned()),
+                maximized: pending.window_builder.maximized,
                 with_panel: false,
                 ..Default::default()
             },
         );
         let webview_label = label.clone();
         webview.on_web_resource_requested(move |mut request, response_fn| {
-            dbg!(&request);
+            // dbg!(&request);
             // TODO: Servo's EmbedderMsg::WebResourceRequested message is sent too early
             // that it doesn't include Origin header, so I hard coded this for now
             if !request.request.headers().contains_key("Origin") {
@@ -347,18 +352,20 @@ pub struct VersoWindowDispatcher {
     context: RuntimeContext,
 }
 
-#[derive(Debug, Clone)]
-pub struct VersoWindowBuilder {}
+#[derive(Debug, Clone, Default)]
+pub struct VersoWindowBuilder {
+    pub maximized: bool,
+}
 
 impl WindowBuilderBase for VersoWindowBuilder {}
 
 impl WindowBuilder for VersoWindowBuilder {
     fn new() -> Self {
-        Self {}
+        Self::default()
     }
 
     fn with_config(config: &WindowConfig) -> Self {
-        Self {}
+        Self::default()
     }
 
     fn center(self) -> Self {
@@ -369,7 +376,7 @@ impl WindowBuilder for VersoWindowBuilder {
         self
     }
 
-    fn inner_size(self, min_width: f64, min_height: f64) -> Self {
+    fn inner_size(self, width: f64, height: f64) -> Self {
         self
     }
 
