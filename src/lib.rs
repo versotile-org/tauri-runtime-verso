@@ -1165,52 +1165,27 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime {
         self.is_running.store(true, Ordering::Relaxed);
         callback(RunEvent::Ready);
 
-        loop {
-            if let Ok(m) = self.run_rx.try_recv() {
-                match m {
-                    Message::Task(p) => p(),
-                    Message::CloseWindow(id) => {
-                        let mut windows = self.context.windows.lock().unwrap();
-                        let label = windows.get(&id).map(|w| w.label.clone());
-                        if let Some(label) = label {
-                            let (tx, rx) = channel();
-                            callback(RunEvent::WindowEvent {
-                                label: label.clone(),
-                                event: WindowEvent::CloseRequested { signal_tx: tx },
-                            });
+        while let Ok(m) = self.run_rx.recv() {
+            match m {
+                Message::Task(p) => p(),
+                Message::CloseWindow(id) => {
+                    let mut windows = self.context.windows.lock().unwrap();
+                    let label = windows.get(&id).map(|w| w.label.clone());
+                    if let Some(label) = label {
+                        let (tx, rx) = channel();
+                        callback(RunEvent::WindowEvent {
+                            label: label.clone(),
+                            event: WindowEvent::CloseRequested { signal_tx: tx },
+                        });
 
-                            let should_prevent = matches!(rx.try_recv(), Ok(true));
-                            if !should_prevent {
-                                windows.remove(&id);
-                                callback(RunEvent::WindowEvent {
-                                    label,
-                                    event: WindowEvent::Destroyed,
-                                });
-
-                                let is_empty = windows.is_empty();
-                                if is_empty {
-                                    let (tx, rx) = channel();
-                                    callback(RunEvent::ExitRequested { code: None, tx });
-
-                                    let recv = rx.try_recv();
-                                    let should_prevent =
-                                        matches!(recv, Ok(ExitRequestedEventAction::Prevent));
-
-                                    if !should_prevent {
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    Message::DestroyWindow(id) => {
-                        let mut windows = self.context.windows.lock().unwrap();
-                        let removed_window_label = windows.remove(&id).map(|w| w.label.clone());
-                        if let Some(label) = removed_window_label {
+                        let should_prevent = matches!(rx.try_recv(), Ok(true));
+                        if !should_prevent {
+                            windows.remove(&id);
                             callback(RunEvent::WindowEvent {
                                 label,
                                 event: WindowEvent::Destroyed,
                             });
+
                             let is_empty = windows.is_empty();
                             if is_empty {
                                 let (tx, rx) = channel();
@@ -1227,11 +1202,30 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime {
                         }
                     }
                 }
+                Message::DestroyWindow(id) => {
+                    let mut windows = self.context.windows.lock().unwrap();
+                    let removed_window_label = windows.remove(&id).map(|w| w.label.clone());
+                    if let Some(label) = removed_window_label {
+                        callback(RunEvent::WindowEvent {
+                            label,
+                            event: WindowEvent::Destroyed,
+                        });
+                        let is_empty = windows.is_empty();
+                        if is_empty {
+                            let (tx, rx) = channel();
+                            callback(RunEvent::ExitRequested { code: None, tx });
+
+                            let recv = rx.try_recv();
+                            let should_prevent =
+                                matches!(recv, Ok(ExitRequestedEventAction::Prevent));
+
+                            if !should_prevent {
+                                break;
+                            }
+                        }
+                    }
+                }
             }
-
-            callback(RunEvent::MainEventsCleared);
-
-            std::thread::sleep(std::time::Duration::from_secs(1));
         }
 
         callback(RunEvent::Exit);
