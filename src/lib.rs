@@ -1175,13 +1175,17 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime {
                         if let Some(label) = label {
                             let (tx, rx) = channel();
                             callback(RunEvent::WindowEvent {
-                                label,
+                                label: label.clone(),
                                 event: WindowEvent::CloseRequested { signal_tx: tx },
                             });
 
                             let should_prevent = matches!(rx.try_recv(), Ok(true));
                             if !should_prevent {
                                 windows.remove(&id);
+                                callback(RunEvent::WindowEvent {
+                                    label,
+                                    event: WindowEvent::Destroyed,
+                                });
 
                                 let is_empty = windows.is_empty();
                                 if is_empty {
@@ -1201,8 +1205,12 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime {
                     }
                     Message::DestroyWindow(id) => {
                         let mut windows = self.context.windows.lock().unwrap();
-                        let removed = windows.remove(&id).is_some();
-                        if removed {
+                        let removed_window_label = windows.remove(&id).map(|w| w.label.clone());
+                        if let Some(label) = removed_window_label {
+                            callback(RunEvent::WindowEvent {
+                                label,
+                                event: WindowEvent::Destroyed,
+                            });
                             let is_empty = windows.is_empty();
                             if is_empty {
                                 let (tx, rx) = channel();
