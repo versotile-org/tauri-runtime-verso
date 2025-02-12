@@ -83,7 +83,21 @@ fn get_verso_resource_directory() -> Option<PathBuf> {
     VERSO_RESOURCES_DIRECTORY.lock().unwrap().clone()
 }
 
-type ShortcutMap = HashMap<String, Box<dyn Fn() + Send + 'static>>;
+/// You need to set this on [`tauri::Builder::invoke_system`] for the invoke system to work
+///
+/// ### Example:
+///
+/// ```
+/// fn main() {
+///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview.exe".into());
+///     tauri_runtime_verso::set_verso_resource_directory("../verso/resources".into());
+///     tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
+///         .invoke_system(tauri_runtime_verso::INVOKE_SYSTEM_SCRIPTS.to_owned())
+///         .run(tauri::generate_context!())
+///         .unwrap();
+/// }
+/// ```
+pub const INVOKE_SYSTEM_SCRIPTS: &str = include_str!("./initialization-script.js");
 
 enum Message {
     Task(Box<dyn FnOnce() + Send>),
@@ -196,6 +210,17 @@ impl RuntimeContext {
                     .insert("Origin", "http://tauri.localhost/".parse().unwrap());
             }
             for (scheme, handler) in &pending_webview.uri_scheme_protocols {
+                // Since servo doesn't support body in its EmbedderMsg::WebResourceRequested yet,
+                // we use a head instead for now
+                if scheme == "ipc" {
+                    if let Some(data) = request
+                        .request
+                        .headers_mut()
+                        .remove("Tauri-VersoRuntime-Invoke-Body")
+                    {
+                        *request.request.body_mut() = data.as_bytes().to_vec();
+                    }
+                }
                 if is_custom_protocol_uri(&request.request.uri().to_string(), "http", &scheme) {
                     handler(
                         &webview_label,
