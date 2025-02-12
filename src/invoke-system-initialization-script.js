@@ -1,10 +1,11 @@
+// This file is copied and modified from Tauri with a few modifications
+// - Changed `processIpcMessage` to always return a string so we can put it inside of http request header
+// - Changed custom protocol IPC to use header instead of body since we can't get the body in Servo yet
+//
+// > ipc-protocol.js: https://github.com/tauri-apps/tauri/blob/dev/crates/tauri/scripts/ipc-protocol.js
+// > process-ipc-message-fn.js: https://github.com/tauri-apps/tauri/blob/dev/crates/tauri/scripts/process-ipc-message-fn.js
+
 ;(function () {
-	// Copyright 2019-2024 Tauri Programme within The Commons Conservancy
-	// SPDX-License-Identifier: Apache-2.0
-	// SPDX-License-Identifier: MIT
-
-	// this is a function and not an iife so use it carefully
-
 	const processIpcMessage = function (message) {
 		// if (message instanceof ArrayBuffer || ArrayBuffer.isView(message) || Array.isArray(message)) {
 		// 	return {
