@@ -202,6 +202,7 @@ impl RuntimeContext {
             dispatcher: VersoWindowDispatcher {
                 id: window_id,
                 context: self.clone(),
+                webview: webview.clone(),
             },
             webview: Some(DetachedWindowWebview {
                 webview: DetachedWebview {
@@ -346,10 +347,21 @@ impl Debug for VersoWebviewDispatcher {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct VersoWindowDispatcher {
     id: WindowId,
     context: RuntimeContext,
+    webview: Arc<Mutex<VersoviewController>>,
+}
+
+impl Debug for VersoWindowDispatcher {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("VersoWebviewDispatcher")
+            .field("id", &self.id)
+            .field("context", &self.context)
+            .field("webview", &"VersoviewController")
+            .finish()
+    }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -669,37 +681,38 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
     }
 
     fn inner_position(&self) -> Result<PhysicalPosition<i32>> {
-        Ok(PhysicalPosition { x: 0, y: 0 })
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().get_position().unwrap())
     }
 
     fn outer_position(&self) -> Result<PhysicalPosition<i32>> {
-        Ok(PhysicalPosition { x: 0, y: 0 })
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().get_position().unwrap())
     }
 
     fn inner_size(&self) -> Result<PhysicalSize<u32>> {
-        Ok(PhysicalSize {
-            width: 0,
-            height: 0,
-        })
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().get_size().unwrap())
     }
 
     fn outer_size(&self) -> Result<PhysicalSize<u32>> {
-        Ok(PhysicalSize {
-            width: 0,
-            height: 0,
-        })
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().get_size().unwrap())
     }
 
     fn is_fullscreen(&self) -> Result<bool> {
-        Ok(false)
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().is_fullscreen().unwrap())
     }
 
     fn is_minimized(&self) -> Result<bool> {
-        Ok(false)
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().is_minimized().unwrap())
     }
 
     fn is_maximized(&self) -> Result<bool> {
-        Ok(false)
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().is_maximized().unwrap())
     }
 
     fn is_focused(&self) -> Result<bool> {
@@ -727,7 +740,8 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
     }
 
     fn is_visible(&self) -> Result<bool> {
-        Ok(true)
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().is_visible().unwrap())
     }
 
     fn title(&self) -> Result<String> {
@@ -820,27 +834,33 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
     }
 
     fn maximize(&self) -> Result<()> {
-        Ok(())
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().set_maximized(true).unwrap())
     }
 
     fn unmaximize(&self) -> Result<()> {
-        Ok(())
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().set_maximized(false).unwrap())
     }
 
     fn minimize(&self) -> Result<()> {
-        Ok(())
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().set_minimized(true).unwrap())
     }
 
     fn unminimize(&self) -> Result<()> {
-        Ok(())
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().set_minimized(false).unwrap())
     }
 
     fn show(&self) -> Result<()> {
-        Ok(())
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().set_visible(false).unwrap())
     }
 
     fn hide(&self) -> Result<()> {
-        Ok(())
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().set_visible(false).unwrap())
     }
 
     fn close(&self) -> Result<()> {
@@ -878,7 +898,8 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
     }
 
     fn set_size(&self, size: Size) -> Result<()> {
-        Ok(())
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().set_size(size).unwrap())
     }
 
     fn set_min_size(&self, size: Option<Size>) -> Result<()> {
@@ -890,11 +911,18 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
     }
 
     fn set_position(&self, position: Position) -> Result<()> {
-        Ok(())
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().set_position(position).unwrap())
     }
 
     fn set_fullscreen(&self, fullscreen: bool) -> Result<()> {
-        Ok(())
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self
+            .webview
+            .lock()
+            .unwrap()
+            .set_fullscreen(fullscreen)
+            .unwrap())
     }
 
     fn set_focus(&self) -> Result<()> {
