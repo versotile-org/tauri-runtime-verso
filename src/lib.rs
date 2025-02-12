@@ -97,7 +97,7 @@ fn get_verso_resource_directory() -> Option<PathBuf> {
 ///         .unwrap();
 /// }
 /// ```
-pub const INVOKE_SYSTEM_SCRIPTS: &str = include_str!("./initialization-script.js");
+pub const INVOKE_SYSTEM_SCRIPTS: &str = include_str!("./invoke-system-initialization-script.js");
 
 enum Message {
     Task(Box<dyn FnOnce() + Send>),

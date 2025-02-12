@@ -1,17 +1,12 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use tauri::Manager;
-use tauri_runtime_verso::{set_verso_path, set_verso_resource_directory};
+use tauri_runtime_verso::{set_verso_path, set_verso_resource_directory, INVOKE_SYSTEM_SCRIPTS};
 
 #[tauri::command]
-fn greet() -> String {
-    format!("Hello, You have been greeted from Rust!")
+fn greet(name: &str) -> String {
+    format!("Hello {name}, You have been greeted from Rust!")
 }
-
-// #[tauri::command]
-// fn greet(name: &str) -> String {
-//     format!("Hello {name}, You have been greeted from Rust!")
-// }
 
 fn main() {
     set_verso_path("../verso/target/debug/versoview.exe".into());
@@ -22,6 +17,7 @@ fn main() {
             dbg!(app.get_webview_window("main").unwrap().inner_size()).unwrap();
             Ok(())
         })
+        .invoke_system(INVOKE_SYSTEM_SCRIPTS.to_owned())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
