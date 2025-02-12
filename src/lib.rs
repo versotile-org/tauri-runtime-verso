@@ -59,6 +59,30 @@ fn get_verso_path() -> &'static Path {
         .expect("Verso path not set! You need to call set_verso_path before creating any webviews!")
 }
 
+static VERSO_RESOURCES_DIRECTORY: Mutex<Option<PathBuf>> = Mutex::new(None);
+
+/// Sets the Verso resources directory to ues for the webviews,
+/// note this only affects webviews created after you set this
+///
+/// ### Example:
+///
+/// ```
+/// fn main() {
+///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview.exe".into());
+///     tauri_runtime_verso::set_verso_resource_directory("../verso/resources".into());
+///     tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
+///         .run(tauri::generate_context!())
+///         .unwrap();
+/// }
+/// ```
+pub fn set_verso_resource_directory(path: PathBuf) {
+    VERSO_RESOURCES_DIRECTORY.lock().unwrap().replace(path);
+}
+
+fn get_verso_resource_directory() -> Option<PathBuf> {
+    VERSO_RESOURCES_DIRECTORY.lock().unwrap().clone()
+}
+
 type ShortcutMap = HashMap<String, Box<dyn Fn() + Send + 'static>>;
 
 enum Message {
@@ -152,9 +176,11 @@ impl RuntimeContext {
             get_verso_path(),
             Url::parse(&pending_webview.url).unwrap(),
             verso::VersoviewSettings {
+                with_panel: false,
+                resources_directory: get_verso_resource_directory()
+                    .map(|path| path.to_string_lossy().to_string()),
                 userscripts_directory: Some("./userscripts".to_owned()),
                 maximized: pending.window_builder.maximized,
-                with_panel: false,
                 ..Default::default()
             },
         );
