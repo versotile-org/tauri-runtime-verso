@@ -195,6 +195,7 @@ impl RuntimeContext {
                     .map(|path| path.to_string_lossy().to_string()),
                 userscripts_directory: Some("./userscripts".to_owned()),
                 maximized: pending.window_builder.maximized,
+                // devtools_port: Some(1234),
                 ..Default::default()
             },
         );
@@ -1009,6 +1010,8 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
     }
 
     fn start_dragging(&self) -> Result<()> {
+        // TODO: Find a good enum value to map and propagate the error
+        self.webview.lock().unwrap().start_dragging().unwrap();
         Ok(())
     }
 
