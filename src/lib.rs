@@ -423,7 +423,10 @@ impl WindowBuilder for VersoWindowBuilder {
     }
 
     fn with_config(config: &WindowConfig) -> Self {
-        Self::default()
+        Self {
+            maximized: config.maximized,
+            ..Default::default()
+        }
     }
 
     fn center(self) -> Self {
@@ -481,7 +484,8 @@ impl WindowBuilder for VersoWindowBuilder {
         self
     }
 
-    fn maximized(self, maximized: bool) -> Self {
+    fn maximized(mut self, maximized: bool) -> Self {
+        self.maximized = maximized;
         self
     }
 
