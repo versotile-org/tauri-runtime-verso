@@ -9,7 +9,7 @@ fn greet(name: &str) -> String {
 }
 
 fn main() {
-    set_verso_path("../verso/target/debug/versoview.exe".into());
+    set_verso_path("../verso/target/debug/versoview".into());
     set_verso_resource_directory("../verso/resources".into());
     tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
         .invoke_handler(tauri::generate_handler![greet])

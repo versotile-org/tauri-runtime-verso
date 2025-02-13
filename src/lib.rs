@@ -41,7 +41,7 @@ static VERSO_PATH: OnceLock<PathBuf> = OnceLock::new();
 ///
 /// ```
 /// fn main() {
-///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview.exe".into());
+///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview".into());
 ///     tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
 ///         .run(tauri::generate_context!())
 ///         .unwrap();
@@ -68,7 +68,7 @@ static VERSO_RESOURCES_DIRECTORY: Mutex<Option<PathBuf>> = Mutex::new(None);
 ///
 /// ```
 /// fn main() {
-///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview.exe".into());
+///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview".into());
 ///     tauri_runtime_verso::set_verso_resource_directory("../verso/resources".into());
 ///     tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
 ///         .run(tauri::generate_context!())
@@ -89,7 +89,7 @@ fn get_verso_resource_directory() -> Option<PathBuf> {
 ///
 /// ```
 /// fn main() {
-///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview.exe".into());
+///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview".into());
 ///     tauri_runtime_verso::set_verso_resource_directory("../verso/resources".into());
 ///     tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
 ///         .invoke_system(tauri_runtime_verso::INVOKE_SYSTEM_SCRIPTS.to_owned())
@@ -976,12 +976,11 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
 
     fn set_fullscreen(&self, fullscreen: bool) -> Result<()> {
         // TODO: Find a good enum value to map and propagate the error
-        self
-        .webview
-        .lock()
-        .unwrap()
-        .set_fullscreen(fullscreen)
-        .unwrap();
+        self.webview
+            .lock()
+            .unwrap()
+            .set_fullscreen(fullscreen)
+            .unwrap();
         Ok(())
     }
 
