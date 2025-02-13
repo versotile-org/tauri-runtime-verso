@@ -723,7 +723,8 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
     }
 
     fn scale_factor(&self) -> Result<f64> {
-        Ok(1.0)
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self.webview.lock().unwrap().get_scale_factor().unwrap())
     }
 
     fn inner_position(&self) -> Result<PhysicalPosition<i32>> {
@@ -770,7 +771,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
     }
 
     fn is_resizable(&self) -> Result<bool> {
-        Ok(false)
+        Ok(true)
     }
 
     fn is_maximizable(&self) -> Result<bool> {
