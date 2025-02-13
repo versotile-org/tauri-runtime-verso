@@ -112,7 +112,6 @@ struct Window {
 
 #[derive(Clone)]
 pub struct RuntimeContext {
-    is_running: Arc<AtomicBool>,
     windows: Arc<Mutex<HashMap<WindowId, Window>>>,
     run_tx: SyncSender<Message>,
     next_window_id: Arc<AtomicU32>,
@@ -123,19 +122,9 @@ pub struct RuntimeContext {
 
 impl RuntimeContext {
     fn send_message(&self, message: Message) -> Result<()> {
-        if self.is_running.load(Ordering::Relaxed) {
-            self.run_tx
-                .send(message)
-                .map_err(|_| Error::FailedToSendMessage)
-        } else {
-            match message {
-                Message::Task(task) => task(),
-                Message::CloseWindow(id) | Message::DestroyWindow(id) => {
-                    self.windows.lock().unwrap().remove(&id);
-                }
-            }
-            Ok(())
-        }
+        self.run_tx
+            .send(message)
+            .map_err(|_| Error::FailedToSendMessage)
     }
 
     fn next_window_id(&self) -> WindowId {
@@ -239,6 +228,11 @@ impl RuntimeContext {
         //     webview.add_init_script(init_script);
         // }
         // webview.add_init_script("console.log('1')".to_owned());
+
+        let sender = self.run_tx.clone();
+        webview.on_close_requested(move || {
+            let _ = sender.send(Message::CloseWindow(window_id));
+        });
 
         let webview = Arc::new(Mutex::new(webview));
         let window = Window {
@@ -1081,17 +1075,14 @@ impl<T: UserEvent> EventLoopProxy<T> for EventProxy {
 
 #[derive(Debug)]
 pub struct VersoRuntime {
-    is_running: Arc<AtomicBool>,
     pub context: RuntimeContext,
     run_rx: Receiver<Message>,
 }
 
 impl VersoRuntime {
     fn init() -> Self {
-        let is_running = Arc::new(AtomicBool::new(false));
         let (tx, rx) = sync_channel(256);
         let context = RuntimeContext {
-            is_running: is_running.clone(),
             windows: Default::default(),
             run_tx: tx,
             next_window_id: Default::default(),
@@ -1100,7 +1091,6 @@ impl VersoRuntime {
             next_webview_event_id: Default::default(),
         };
         Self {
-            is_running,
             context,
             run_rx: rx,
         }
@@ -1190,7 +1180,6 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime {
     fn run_iteration<F: FnMut(RunEvent<T>)>(&mut self, callback: F) {}
 
     fn run<F: FnMut(RunEvent<T>) + 'static>(self, mut callback: F) {
-        self.is_running.store(true, Ordering::Relaxed);
         callback(RunEvent::Ready);
 
         while let Ok(m) = self.run_rx.recv() {
