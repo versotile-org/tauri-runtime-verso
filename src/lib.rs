@@ -257,7 +257,6 @@ impl RuntimeContext {
                         id: webview_id,
                         context: self.clone(),
                         webview: webview.clone(),
-                        url: Arc::new(Mutex::new(pending_webview.url)),
                     },
                 },
                 use_https_scheme: false,
@@ -379,7 +378,6 @@ pub struct VersoWebviewDispatcher {
     id: u32,
     context: RuntimeContext,
     webview: Arc<Mutex<VersoviewController>>,
-    url: Arc<Mutex<String>>,
 }
 
 impl Debug for VersoWebviewDispatcher {
@@ -388,7 +386,6 @@ impl Debug for VersoWebviewDispatcher {
             .field("id", &self.id)
             .field("context", &self.context)
             .field("webview", &"VersoviewController")
-            .field("url", &self.url)
             .finish()
     }
 }
@@ -629,7 +626,14 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher {
     }
 
     fn url(&self) -> Result<String> {
-        Ok(self.url.lock().unwrap().clone())
+        // TODO: Find a good enum value to map and propagate the error
+        Ok(self
+            .webview
+            .lock()
+            .unwrap()
+            .get_current_url()
+            .unwrap()
+            .to_string())
     }
 
     fn bounds(&self) -> Result<tauri_runtime::Rect> {
@@ -648,7 +652,8 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher {
     }
 
     fn navigate(&self, url: Url) -> Result<()> {
-        *self.url.lock().unwrap() = url.to_string();
+        // TODO: Find a good enum value to map and propagate the error
+        self.webview.lock().unwrap().navigate(url).unwrap();
         Ok(())
     }
 
