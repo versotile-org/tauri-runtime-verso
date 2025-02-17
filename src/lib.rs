@@ -41,15 +41,15 @@ static VERSO_PATH: OnceLock<PathBuf> = OnceLock::new();
 ///
 /// ```
 /// fn main() {
-///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview".into());
+///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview");
 ///     tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
 ///         .run(tauri::generate_context!())
 ///         .unwrap();
 /// }
 /// ```
-pub fn set_verso_path(path: PathBuf) {
+pub fn set_verso_path(path: impl Into<PathBuf>) {
     VERSO_PATH
-        .set(path)
+        .set(path.into())
         .expect("Verso path is already set, you can't set it multiple times");
 }
 
@@ -68,15 +68,18 @@ static VERSO_RESOURCES_DIRECTORY: Mutex<Option<PathBuf>> = Mutex::new(None);
 ///
 /// ```
 /// fn main() {
-///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview".into());
-///     tauri_runtime_verso::set_verso_resource_directory("../verso/resources".into());
+///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview");
+///     tauri_runtime_verso::set_verso_resource_directory("../verso/resources");
 ///     tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
 ///         .run(tauri::generate_context!())
 ///         .unwrap();
 /// }
 /// ```
-pub fn set_verso_resource_directory(path: PathBuf) {
-    VERSO_RESOURCES_DIRECTORY.lock().unwrap().replace(path);
+pub fn set_verso_resource_directory(path: impl Into<PathBuf>) {
+    VERSO_RESOURCES_DIRECTORY
+        .lock()
+        .unwrap()
+        .replace(path.into());
 }
 
 fn get_verso_resource_directory() -> Option<PathBuf> {
@@ -89,8 +92,8 @@ fn get_verso_resource_directory() -> Option<PathBuf> {
 ///
 /// ```
 /// fn main() {
-///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview".into());
-///     tauri_runtime_verso::set_verso_resource_directory("../verso/resources".into());
+///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview");
+///     tauri_runtime_verso::set_verso_resource_directory("../verso/resources");
 ///     tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
 ///         .invoke_system(tauri_runtime_verso::INVOKE_SYSTEM_SCRIPTS.to_owned())
 ///         .run(tauri::generate_context!())
