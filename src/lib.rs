@@ -102,10 +102,11 @@ fn get_verso_resource_directory() -> Option<PathBuf> {
 /// ```
 pub const INVOKE_SYSTEM_SCRIPTS: &str = include_str!("./invoke-system-initialization-script.js");
 
-enum Message {
+enum Message<T> {
     Task(Box<dyn FnOnce() + Send>),
     CloseWindow(WindowId),
     DestroyWindow(WindowId),
+    UserEvent(T),
 }
 
 struct Window {
@@ -114,17 +115,17 @@ struct Window {
 }
 
 #[derive(Clone)]
-pub struct RuntimeContext {
+pub struct RuntimeContext<T> {
     windows: Arc<Mutex<HashMap<WindowId, Window>>>,
-    run_tx: SyncSender<Message>,
+    run_tx: SyncSender<Message<T>>,
     next_window_id: Arc<AtomicU32>,
     next_webview_id: Arc<AtomicU32>,
     next_window_event_id: Arc<AtomicU32>,
     next_webview_event_id: Arc<AtomicU32>,
 }
 
-impl RuntimeContext {
-    fn send_message(&self, message: Message) -> Result<()> {
+impl<T: UserEvent> RuntimeContext<T> {
+    fn send_message(&self, message: Message<T>) -> Result<()> {
         self.run_tx
             .send(message)
             .map_err(|_| Error::FailedToSendMessage)
@@ -147,11 +148,10 @@ impl RuntimeContext {
     }
 
     fn create_window<
-        T: UserEvent,
         R: Runtime<
             T,
-            WindowDispatcher = VersoWindowDispatcher,
-            WebviewDispatcher = VersoWebviewDispatcher,
+            WindowDispatcher = VersoWindowDispatcher<T>,
+            WebviewDispatcher = VersoWebviewDispatcher<T>,
         >,
         F: Fn(RawWindow<'_>) + Send + 'static,
     >(
@@ -284,22 +284,24 @@ fn is_custom_protocol_uri(uri: &str, http_or_https: &'static str, protocol: &str
     && scheme_len + 3 + protocol_len < uri_len && uri.as_bytes()[scheme_len + 3 + protocol_len] == b'.'
 }
 
-impl fmt::Debug for RuntimeContext {
+impl<T> Debug for RuntimeContext<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RuntimeContext").finish()
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct VersoRuntimeHandle {
-    context: RuntimeContext,
+pub struct VersoRuntimeHandle<T> {
+    context: RuntimeContext<T>,
 }
 
-impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle {
-    type Runtime = VersoRuntime;
+impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
+    type Runtime = VersoRuntime<T>;
 
-    fn create_proxy(&self) -> EventProxy {
-        EventProxy {}
+    fn create_proxy(&self) -> EventProxy<T> {
+        EventProxy {
+            run_tx: self.context.run_tx.clone(),
+        }
     }
 
     #[cfg(target_os = "macos")]
@@ -382,13 +384,13 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle {
 }
 
 #[derive(Clone)]
-pub struct VersoWebviewDispatcher {
+pub struct VersoWebviewDispatcher<T> {
     id: u32,
-    context: RuntimeContext,
+    context: RuntimeContext<T>,
     webview: Arc<Mutex<VersoviewController>>,
 }
 
-impl Debug for VersoWebviewDispatcher {
+impl<T> Debug for VersoWebviewDispatcher<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("VersoWebviewDispatcher")
             .field("id", &self.id)
@@ -399,13 +401,13 @@ impl Debug for VersoWebviewDispatcher {
 }
 
 #[derive(Clone)]
-pub struct VersoWindowDispatcher {
+pub struct VersoWindowDispatcher<T> {
     id: WindowId,
-    context: RuntimeContext,
+    context: RuntimeContext<T>,
     webview: Arc<Mutex<VersoviewController>>,
 }
 
-impl Debug for VersoWindowDispatcher {
+impl<T> Debug for VersoWindowDispatcher<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("VersoWebviewDispatcher")
             .field("id", &self.id)
@@ -637,8 +639,8 @@ impl WindowBuilder for VersoWindowBuilder {
     }
 }
 
-impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher {
-    type Runtime = VersoRuntime;
+impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher<T> {
+    type Runtime = VersoRuntime<T>;
 
     fn run_on_main_thread<F: FnOnce() + Send + 'static>(&self, f: F) -> Result<()> {
         self.context.send_message(Message::Task(Box::new(f)))
@@ -684,8 +686,8 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher {
 
     fn bounds(&self) -> Result<tauri_runtime::Rect> {
         Ok(tauri_runtime::Rect {
-            position: <VersoWebviewDispatcher as WebviewDispatch<T>>::position(self)?.into(),
-            size: <VersoWebviewDispatcher as WebviewDispatch<T>>::size(self)?.into(),
+            position: self.position()?.into(),
+            size: self.size()?.into(),
         })
     }
 
@@ -787,8 +789,8 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher {
     }
 }
 
-impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
-    type Runtime = VersoRuntime;
+impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
+    type Runtime = VersoRuntime<T>;
 
     type WindowBuilder = VersoWindowBuilder;
 
@@ -1202,21 +1204,25 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
 }
 
 #[derive(Debug, Clone)]
-pub struct EventProxy {}
+pub struct EventProxy<T> {
+    run_tx: SyncSender<Message<T>>,
+}
 
-impl<T: UserEvent> EventLoopProxy<T> for EventProxy {
+impl<T: UserEvent> EventLoopProxy<T> for EventProxy<T> {
     fn send_event(&self, event: T) -> Result<()> {
-        Ok(())
+        self.run_tx
+            .send(Message::UserEvent(event))
+            .map_err(|_| Error::FailedToSendMessage)
     }
 }
 
 #[derive(Debug)]
-pub struct VersoRuntime {
-    pub context: RuntimeContext,
-    run_rx: Receiver<Message>,
+pub struct VersoRuntime<T: UserEvent = tauri::EventLoopMessage> {
+    pub context: RuntimeContext<T>,
+    run_rx: Receiver<Message<T>>,
 }
 
-impl VersoRuntime {
+impl<T: UserEvent> VersoRuntime<T> {
     fn init() -> Self {
         let (tx, rx) = sync_channel(256);
         let context = RuntimeContext {
@@ -1234,24 +1240,27 @@ impl VersoRuntime {
     }
 }
 
-impl<T: UserEvent> Runtime<T> for VersoRuntime {
-    type WindowDispatcher = VersoWindowDispatcher;
-    type WebviewDispatcher = VersoWebviewDispatcher;
-    type Handle = VersoRuntimeHandle;
-    type EventLoopProxy = EventProxy;
+impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
+    type WindowDispatcher = VersoWindowDispatcher<T>;
+    type WebviewDispatcher = VersoWebviewDispatcher<T>;
+    type Handle = VersoRuntimeHandle<T>;
+    type EventLoopProxy = EventProxy<T>;
 
+    /// `args` not supported
     fn new(_args: RuntimeInitArgs) -> Result<Self> {
         Ok(Self::init())
     }
 
-    /// Unsupported, has no effect when called
+    /// `args` not supported
     #[cfg(any(windows, target_os = "linux"))]
     fn new_any_thread(_args: RuntimeInitArgs) -> Result<Self> {
         Ok(Self::init())
     }
 
-    fn create_proxy(&self) -> EventProxy {
-        EventProxy {}
+    fn create_proxy(&self) -> EventProxy<T> {
+        EventProxy {
+            run_tx: self.context.run_tx.clone(),
+        }
     }
 
     fn handle(&self) -> Self::Handle {
@@ -1388,6 +1397,7 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime {
                         }
                     }
                 }
+                Message::UserEvent(user_event) => callback(RunEvent::UserEvent(user_event)),
             }
         }
 

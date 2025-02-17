@@ -3351,6 +3351,7 @@ dependencies = [
  "gtk",
  "http",
  "raw-window-handle",
+ "tauri",
  "tauri-runtime",
  "tauri-utils",
  "url",
