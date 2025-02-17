@@ -147,6 +147,10 @@ impl<T: UserEvent> RuntimeContext<T> {
         self.next_webview_event_id.fetch_add(1, Ordering::Relaxed)
     }
 
+    /// `after_window_creation` not supported
+    ///
+    /// Only creating the window with a webview is supported,
+    /// will return [`tauri_runtime::Error::CreateWindow`] if there is no [`PendingWindow::webview`]
     fn create_window<
         R: Runtime<
             T,
@@ -160,7 +164,9 @@ impl<T: UserEvent> RuntimeContext<T> {
         after_window_creation: Option<F>,
     ) -> Result<DetachedWindow<T, R>> {
         let label = pending.label;
-        let pending_webview = pending.webview.unwrap();
+        let Some(pending_webview) = pending.webview else {
+            return Err(tauri_runtime::Error::CreateWindow);
+        };
 
         let window_id = self.next_window_id();
         let webview_id = self.next_webview_id();
@@ -317,7 +323,10 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
         unimplemented!()
     }
 
-    /// Create a new webview window.
+    /// `after_window_creation` not supported
+    ///
+    /// Only creating the window with a webview is supported,
+    /// will return [`tauri_runtime::Error::CreateWindow`] if there is no [`PendingWindow::webview`]
     fn create_window<F: Fn(RawWindow<'_>) + Send + 'static>(
         &self,
         pending: PendingWindow<T, Self::Runtime>,
@@ -941,6 +950,10 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
         Ok(())
     }
 
+    /// `after_window_creation` not supported
+    ///
+    /// Only creating the window with a webview is supported,
+    /// will return [`tauri_runtime::Error::CreateWindow`] if there is no [`PendingWindow::webview`]
     fn create_window<F: Fn(RawWindow<'_>) + Send + 'static>(
         &mut self,
         pending: PendingWindow<T, Self::Runtime>,
@@ -1269,6 +1282,10 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
         }
     }
 
+    /// `after_window_creation` not supported
+    ///
+    /// Only creating the window with a webview is supported,
+    /// will return [`tauri_runtime::Error::CreateWindow`] if there is no [`PendingWindow::webview`]
     fn create_window<F: Fn(RawWindow<'_>) + Send + 'static>(
         &self,
         pending: PendingWindow<T, Self>,
