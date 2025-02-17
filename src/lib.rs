@@ -238,6 +238,10 @@ impl<T: UserEvent> RuntimeContext<T> {
         // }
         // webview.add_init_script("console.log('1')".to_owned());
 
+        if let Some(navigation_handler) = pending_webview.navigation_handler {
+            webview.on_navigation_starting(move |url| navigation_handler(&url));
+        }
+
         let sender = self.run_tx.clone();
         webview.on_close_requested(move || {
             let _ = sender.send(Message::CloseWindow(window_id));
