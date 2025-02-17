@@ -324,12 +324,13 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle {
         self.context.create_window(pending, after_window_creation)
     }
 
+    /// Unsupported, always fail with [`tauri_runtime::Error::CreateWindow`]
     fn create_webview(
         &self,
         window_id: WindowId,
         pending: PendingWebview<T, Self::Runtime>,
     ) -> Result<DetachedWebview<T, Self::Runtime>> {
-        todo!()
+        Err(tauri_runtime::Error::CreateWindow)
     }
 
     /// Run a task on the main thread.
@@ -337,42 +338,46 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle {
         self.context.send_message(Message::Task(Box::new(f)))
     }
 
+    /// Unsupported, always returns [`None`]
     fn primary_monitor(&self) -> Option<Monitor> {
-        unimplemented!()
+        None
     }
 
+    /// Unsupported, always returns [`None`]
     fn monitor_from_point(&self, x: f64, y: f64) -> Option<Monitor> {
-        unimplemented!()
+        None
     }
 
+    /// Unsupported, always returns an empty vector
     fn available_monitors(&self) -> Vec<Monitor> {
-        unimplemented!()
+        Vec::new()
     }
 
-    fn set_theme(&self, theme: Option<Theme>) {
-        unimplemented!()
-    }
+    /// Unsupported, has no effect when called
+    fn set_theme(&self, theme: Option<Theme>) {}
 
-    /// Shows the application, but does not automatically focus it.
+    /// Unsupported, has no effect
     #[cfg(target_os = "macos")]
     fn show(&self) -> Result<()> {
         Ok(())
     }
 
-    /// Hides the application.
+    /// Unsupported, has no effect
     #[cfg(target_os = "macos")]
     fn hide(&self) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, will always return PhysicalPosition { x: 0, y: 0 }
     fn cursor_position(&self) -> Result<PhysicalPosition<f64>> {
-        todo!()
+        Ok(PhysicalPosition::default())
     }
 
+    /// Unsupported, will always return an error
     fn display_handle(
         &self,
     ) -> std::result::Result<raw_window_handle::DisplayHandle, raw_window_handle::HandleError> {
-        todo!()
+        Err(raw_window_handle::HandleError::NotSupported)
     }
 }
 
@@ -429,26 +434,32 @@ impl WindowBuilder for VersoWindowBuilder {
         }
     }
 
+    /// Unsupported, has no effect
     fn center(self) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn position(self, x: f64, y: f64) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn inner_size(self, width: f64, height: f64) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn min_inner_size(self, min_width: f64, min_height: f64) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn max_inner_size(self, max_width: f64, max_height: f64) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn inner_size_constraints(
         self,
         constraints: tauri_runtime::window::WindowSizeConstraints,
@@ -456,30 +467,37 @@ impl WindowBuilder for VersoWindowBuilder {
         self
     }
 
+    /// Unsupported, has no effect
     fn resizable(self, resizable: bool) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn maximizable(self, resizable: bool) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn minimizable(self, resizable: bool) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn closable(self, resizable: bool) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn title<S: Into<String>>(self, title: S) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn fullscreen(self, fullscreen: bool) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn focused(self, focused: bool) -> Self {
         self
     }
@@ -489,51 +507,63 @@ impl WindowBuilder for VersoWindowBuilder {
         self
     }
 
+    /// Unsupported, has no effect
     fn visible(self, visible: bool) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn decorations(self, decorations: bool) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn always_on_bottom(self, always_on_bottom: bool) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn always_on_top(self, always_on_top: bool) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn visible_on_all_workspaces(self, visible_on_all_workspaces: bool) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn content_protected(self, protected: bool) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn icon(self, icon: Icon<'_>) -> Result<Self> {
         Ok(self)
     }
 
+    /// Unsupported, has no effect
     fn skip_taskbar(self, skip: bool) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn window_classname<S: Into<String>>(self, classname: S) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn shadow(self, enable: bool) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     #[cfg(target_os = "macos")]
     fn parent(self, parent: *mut std::ffi::c_void) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     #[cfg(any(
         target_os = "linux",
         target_os = "dragonfly",
@@ -545,54 +575,65 @@ impl WindowBuilder for VersoWindowBuilder {
         self
     }
 
+    /// Unsupported, has no effect
     #[cfg(windows)]
     fn drag_and_drop(self, enabled: bool) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     #[cfg(target_os = "macos")]
     fn title_bar_style(self, style: TitleBarStyle) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     #[cfg(target_os = "macos")]
     fn hidden_title(self, transparent: bool) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     #[cfg(target_os = "macos")]
     fn tabbing_identifier(self, identifier: &str) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     fn theme(self, theme: Option<Theme>) -> Self {
         self
     }
 
+    /// Unsupported, always returns false
     fn has_icon(&self) -> bool {
         false
     }
 
+    /// Unsupported, always returns [`None`]
     fn get_theme(&self) -> Option<Theme> {
         None
     }
 
+    /// Unsupported, has no effect
     fn background_color(self, _color: tauri_utils::config::Color) -> Self {
         self
     }
 
+    /// Unsupported, has no effect
     #[cfg(windows)]
     fn owner(self, owner: HWND) -> Self {
-        todo!()
+        self
     }
 
+    /// Unsupported, has no effect
     #[cfg(windows)]
     fn parent(self, parent: HWND) -> Self {
-        todo!()
+        self
     }
 
+    /// Unsupported, has no effect
     fn transparent(self, transparent: bool) -> Self {
-        todo!()
+        self
     }
 }
 
@@ -610,10 +651,12 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher {
         self.context.next_window_event_id()
     }
 
+    /// Unsupported, has no effect when called, the callback will not be called
     fn with_webview<F: FnOnce(Box<dyn std::any::Any>) + Send + 'static>(&self, f: F) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_zoom(&self, scale_factor: f64) -> Result<()> {
         Ok(())
     }
@@ -640,7 +683,10 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher {
     }
 
     fn bounds(&self) -> Result<tauri_runtime::Rect> {
-        Ok(tauri_runtime::Rect::default())
+        Ok(tauri_runtime::Rect {
+            position: <VersoWebviewDispatcher as WebviewDispatch<T>>::position(self)?.into(),
+            size: <VersoWebviewDispatcher as WebviewDispatch<T>>::size(self)?.into(),
+        })
     }
 
     fn position(&self) -> Result<PhysicalPosition<i32>> {
@@ -648,10 +694,9 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher {
     }
 
     fn size(&self) -> Result<PhysicalSize<u32>> {
-        Ok(PhysicalSize {
-            width: 0,
-            height: 0,
-        })
+        // TODO: Find a good enum value to map and propagate the error
+        let size = self.webview.lock().unwrap().get_size().unwrap();
+        Ok(size)
     }
 
     fn navigate(&self, url: Url) -> Result<()> {
@@ -660,64 +705,85 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn print(&self) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called,
+    /// the versoview controls both the webview and the window
+    /// use the method from the parent window instead
     fn close(&self) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called,
+    /// the versoview controls both the webview and the window
+    /// use the method from the parent window instead
     fn set_bounds(&self, bounds: tauri_runtime::Rect) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called,
+    /// the versoview controls both the webview and the window
+    /// use the method from the parent window instead
     fn set_size(&self, _size: Size) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called,
+    /// the versoview controls both the webview and the window
+    /// use the method from the parent window instead
     fn set_position(&self, _position: Position) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called,
+    /// the versoview controls both the webview and the window
+    /// use the method from the parent window instead
     fn set_focus(&self) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn reparent(&self, window_id: WindowId) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_auto_resize(&self, auto_resize: bool) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn clear_all_browsing_data(&self) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn hide(&self) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn show(&self) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_background_color(&self, color: Option<tauri_utils::config::Color>) -> Result<()> {
         Ok(())
     }
 
-    fn open_devtools(&self) {
-        todo!()
-    }
+    /// Unsupported, has no effect when called
+    fn open_devtools(&self) {}
 
-    fn close_devtools(&self) {
-        todo!()
-    }
+    /// Unsupported, has no effect when called
+    fn close_devtools(&self) {}
 
+    /// Always false since we don't have devtools built-in
     fn is_devtools_open(&self) -> Result<bool> {
-        todo!()
+        Ok(false)
     }
 }
 
@@ -774,26 +840,32 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
         Ok(self.webview.lock().unwrap().is_maximized().unwrap())
     }
 
+    /// Unsupported, always returns false
     fn is_focused(&self) -> Result<bool> {
         Ok(false)
     }
 
+    /// Unsupported, always returns false
     fn is_decorated(&self) -> Result<bool> {
         Ok(false)
     }
 
+    /// Unsupported, always returns true
     fn is_resizable(&self) -> Result<bool> {
         Ok(true)
     }
 
+    /// Unsupported, always returns true
     fn is_maximizable(&self) -> Result<bool> {
         Ok(true)
     }
 
+    /// Unsupported, always returns true
     fn is_minimizable(&self) -> Result<bool> {
         Ok(true)
     }
 
+    /// Unsupported, always returns true
     fn is_closable(&self) -> Result<bool> {
         Ok(true)
     }
@@ -803,30 +875,37 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
         Ok(self.webview.lock().unwrap().is_visible().unwrap())
     }
 
+    /// Unsupported, always returns empty string
     fn title(&self) -> Result<String> {
         Ok(String::new())
     }
 
+    /// Unsupported, always returns [`None`]
     fn current_monitor(&self) -> Result<Option<Monitor>> {
         Ok(None)
     }
 
+    /// Unsupported, always returns [`None`]
     fn primary_monitor(&self) -> Result<Option<Monitor>> {
         Ok(None)
     }
 
+    /// Unsupported, always returns [`None`]
     fn monitor_from_point(&self, x: f64, y: f64) -> Result<Option<Monitor>> {
         Ok(None)
     }
 
+    /// Unsupported, always returns an empty vector
     fn available_monitors(&self) -> Result<Vec<Monitor>> {
         Ok(Vec::new())
     }
 
+    /// Unsupported, always returns [Theme::Light]
     fn theme(&self) -> Result<Theme> {
         Ok(Theme::Light)
     }
 
+    /// Unsupported, panics when called
     #[cfg(any(
         target_os = "linux",
         target_os = "dragonfly",
@@ -838,6 +917,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
         unimplemented!()
     }
 
+    /// Unsupported, panics when called
     #[cfg(any(
         target_os = "linux",
         target_os = "dragonfly",
@@ -849,10 +929,12 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
         unimplemented!()
     }
 
+    /// Unsupported, has no effect when called
     fn center(&self) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn request_user_attention(&self, request_type: Option<UserAttentionType>) -> Result<()> {
         Ok(())
     }
@@ -865,29 +947,35 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
         self.context.create_window(pending, after_window_creation)
     }
 
+    /// Unsupported, always fail with [`tauri_runtime::Error::CreateWindow`]
     fn create_webview(
         &mut self,
         pending: PendingWebview<T, Self::Runtime>,
     ) -> Result<DetachedWebview<T, Self::Runtime>> {
-        todo!()
+        Err(tauri_runtime::Error::CreateWindow)
     }
 
+    /// Unsupported, has no effect when called
     fn set_resizable(&self, resizable: bool) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_maximizable(&self, maximizable: bool) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_minimizable(&self, minimizable: bool) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_closable(&self, closable: bool) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_title<S: Into<String>>(&self, title: S) -> Result<()> {
         Ok(())
     }
@@ -938,26 +1026,32 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_decorations(&self, decorations: bool) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_shadow(&self, shadow: bool) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_always_on_bottom(&self, always_on_bottom: bool) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_always_on_top(&self, always_on_top: bool) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_visible_on_all_workspaces(&self, visible_on_all_workspaces: bool) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_content_protected(&self, protected: bool) -> Result<()> {
         Ok(())
     }
@@ -968,10 +1062,12 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_min_size(&self, size: Option<Size>) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_max_size(&self, size: Option<Size>) -> Result<()> {
         Ok(())
     }
@@ -992,34 +1088,42 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_focus(&self) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_icon(&self, icon: Icon<'_>) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_skip_taskbar(&self, skip: bool) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_cursor_grab(&self, grab: bool) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_cursor_visible(&self, visible: bool) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_cursor_icon(&self, icon: CursorIcon) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_cursor_position<Pos: Into<Position>>(&self, position: Pos) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_ignore_cursor_events(&self, ignore: bool) -> Result<()> {
         Ok(())
     }
@@ -1030,30 +1134,37 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn start_resize_dragging(&self, direction: tauri_runtime::ResizeDirection) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_progress_bar(&self, progress_state: ProgressBarState) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_badge_count(&self, count: Option<i64>, desktop_filename: Option<String>) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_badge_label(&self, label: Option<String>) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_overlay_icon(&self, icon: Option<Icon<'_>>) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_title_bar_style(&self, style: tauri_utils::TitleBarStyle) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_size_constraints(
         &self,
         constraints: tauri_runtime::window::WindowSizeConstraints,
@@ -1061,27 +1172,32 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_theme(&self, theme: Option<Theme>) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, has no effect when called
     fn set_enabled(&self, enabled: bool) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, always returns true
     fn is_enabled(&self) -> Result<bool> {
         Ok(true)
     }
 
+    /// Unsupported, has no effect when called
     fn set_background_color(&self, color: Option<tauri_utils::config::Color>) -> Result<()> {
         Ok(())
     }
 
+    /// Unsupported, will always return an error
     fn window_handle(
         &self,
     ) -> std::result::Result<raw_window_handle::WindowHandle<'_>, raw_window_handle::HandleError>
     {
-        todo!()
+        Err(raw_window_handle::HandleError::NotSupported)
     }
 }
 
@@ -1128,6 +1244,7 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime {
         Ok(Self::init())
     }
 
+    /// Unsupported, has no effect when called
     #[cfg(any(windows, target_os = "linux"))]
     fn new_any_thread(_args: RuntimeInitArgs) -> Result<Self> {
         Ok(Self::init())
@@ -1151,44 +1268,52 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime {
         self.context.create_window(pending, after_window_creation)
     }
 
+    /// Unsupported, always fail with [`tauri_runtime::Error::CreateWindow`]
     fn create_webview(
         &self,
         window_id: WindowId,
         pending: PendingWebview<T, Self>,
     ) -> Result<DetachedWebview<T, Self>> {
-        todo!()
+        Err(tauri_runtime::Error::CreateWindow)
     }
 
+    /// Unsupported, always returns [`None`]
     fn primary_monitor(&self) -> Option<Monitor> {
-        unimplemented!()
+        None
     }
 
+    /// Unsupported, always returns [`None`]
     fn monitor_from_point(&self, x: f64, y: f64) -> Option<Monitor> {
-        unimplemented!()
+        None
     }
 
+    /// Unsupported, always returns an empty vector
     fn available_monitors(&self) -> Vec<Monitor> {
-        unimplemented!()
+        Vec::new()
     }
 
-    fn set_theme(&self, theme: Option<Theme>) {
-        unimplemented!()
-    }
+    /// Unsupported, has no effect when called
+    fn set_theme(&self, theme: Option<Theme>) {}
 
+    /// Unsupported, has no effect when called
     #[cfg(target_os = "macos")]
     #[cfg_attr(docsrs, doc(cfg(target_os = "macos")))]
     fn set_activation_policy(&mut self, activation_policy: tauri_runtime::ActivationPolicy) {}
 
+    /// Unsupported, has no effect when called
     #[cfg(target_os = "macos")]
     #[cfg_attr(docsrs, doc(cfg(target_os = "macos")))]
     fn show(&self) {}
 
+    /// Unsupported, has no effect when called
     #[cfg(target_os = "macos")]
     #[cfg_attr(docsrs, doc(cfg(target_os = "macos")))]
     fn hide(&self) {}
 
+    /// Unsupported, has no effect when called
     fn set_device_event_filter(&mut self, filter: DeviceEventFilter) {}
 
+    /// Unsupported, has no effect when called
     #[cfg(any(
         target_os = "macos",
         windows,
@@ -1269,7 +1394,8 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime {
         callback(RunEvent::Exit);
     }
 
+    /// Unsupported, will always return PhysicalPosition { x: 0, y: 0 }
     fn cursor_position(&self) -> Result<PhysicalPosition<f64>> {
-        todo!()
+        Ok(PhysicalPosition::default())
     }
 }
