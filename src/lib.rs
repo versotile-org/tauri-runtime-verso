@@ -820,14 +820,28 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
         Ok(self.webview.lock().unwrap().get_scale_factor().unwrap())
     }
 
+    /// Always return PhysicalPosition { x: 0, y: 0 } on Wayland
     fn inner_position(&self) -> Result<PhysicalPosition<i32>> {
         // TODO: Find a good enum value to map and propagate the error
-        Ok(self.webview.lock().unwrap().get_position().unwrap())
+        Ok(self
+            .webview
+            .lock()
+            .unwrap()
+            .get_position()
+            .unwrap()
+            .unwrap_or_default())
     }
 
+    /// Always return PhysicalPosition { x: 0, y: 0 } on Wayland
     fn outer_position(&self) -> Result<PhysicalPosition<i32>> {
         // TODO: Find a good enum value to map and propagate the error
-        Ok(self.webview.lock().unwrap().get_position().unwrap())
+        Ok(self
+            .webview
+            .lock()
+            .unwrap()
+            .get_position()
+            .unwrap()
+            .unwrap_or_default())
     }
 
     fn inner_size(&self) -> Result<PhysicalSize<u32>> {
