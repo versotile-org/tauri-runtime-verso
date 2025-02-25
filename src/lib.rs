@@ -26,7 +26,7 @@ use std::{
     fs,
     path::{Path, PathBuf},
     sync::{
-        atomic::{AtomicBool, AtomicU32, Ordering},
+        atomic::{AtomicU32, Ordering},
         mpsc::{channel, sync_channel, Receiver, SyncSender},
         Arc, Mutex, OnceLock,
     },
@@ -109,9 +109,13 @@ enum Message<T> {
     UserEvent(T),
 }
 
+pub type WindowEventHandler = Box<dyn Fn(&WindowEvent) + Send>;
+pub type WindowEventListeners = Arc<Mutex<HashMap<WindowEventId, WindowEventHandler>>>;
+
 struct Window {
     label: String,
     webview: Arc<Mutex<VersoviewController>>,
+    on_window_event_listeners: WindowEventListeners,
 }
 
 #[derive(Clone)]
@@ -247,10 +251,13 @@ impl<T: UserEvent> RuntimeContext<T> {
             let _ = sender.send(Message::CloseWindow(window_id));
         });
 
+        let on_window_event_listeners = Arc::new(Mutex::new(HashMap::new()));
+
         let webview = Arc::new(Mutex::new(webview));
         let window = Window {
             label: label.clone(),
             webview: webview.clone(),
+            on_window_event_listeners: on_window_event_listeners.clone(),
         };
 
         self.windows.lock().unwrap().insert(window_id, window);
@@ -262,6 +269,7 @@ impl<T: UserEvent> RuntimeContext<T> {
                 id: window_id,
                 context: self.clone(),
                 webview: webview.clone(),
+                on_window_event_listeners,
             },
             webview: Some(DetachedWindowWebview {
                 webview: DetachedWebview {
@@ -418,6 +426,7 @@ pub struct VersoWindowDispatcher<T> {
     id: WindowId,
     context: RuntimeContext<T>,
     webview: Arc<Mutex<VersoviewController>>,
+    on_window_event_listeners: WindowEventListeners,
 }
 
 impl<T> Debug for VersoWindowDispatcher<T> {
@@ -812,7 +821,12 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn on_window_event<F: Fn(&WindowEvent) + Send + 'static>(&self, f: F) -> WindowEventId {
-        self.context.next_window_event_id()
+        let id = self.context.next_window_event_id();
+        self.on_window_event_listeners
+            .lock()
+            .unwrap()
+            .insert(id, Box::new(f));
+        id
     }
 
     fn scale_factor(&self) -> Result<f64> {
@@ -1269,6 +1283,64 @@ impl<T: UserEvent> VersoRuntime<T> {
             run_rx: rx,
         }
     }
+
+    /// Handles the close window request by sending the [`WindowEvent::CloseRequested`] event
+    /// if the request doesn't request a forced close
+    /// and if not prevented, send [`WindowEvent::Destroyed`]
+    /// then checks if there're windows left, if not, send [`RunEvent::ExitRequested`]
+    /// returns if we should exit the event loop
+    fn handle_close_window_request<F: FnMut(RunEvent<T>) + 'static>(
+        &self,
+        callback: &mut F,
+        id: WindowId,
+        force: bool,
+    ) -> bool {
+        let mut windows = self.context.windows.lock().unwrap();
+        let Some(window) = windows.get(&id) else {
+            return false;
+        };
+        let label = window.label.clone();
+        let on_window_event_listeners = window.on_window_event_listeners.lock().unwrap();
+
+        if !force {
+            let (tx, rx) = channel();
+            let window_event = WindowEvent::CloseRequested {
+                signal_tx: tx.clone(),
+            };
+            for handler in on_window_event_listeners.values() {
+                handler(&window_event);
+            }
+            callback(RunEvent::WindowEvent {
+                label: label.clone(),
+                event: WindowEvent::CloseRequested { signal_tx: tx },
+            });
+
+            let should_prevent = matches!(rx.try_recv(), Ok(true));
+            if should_prevent {
+                return false;
+            }
+        }
+        drop(on_window_event_listeners);
+
+        windows.remove(&id);
+        callback(RunEvent::WindowEvent {
+            label,
+            event: WindowEvent::Destroyed,
+        });
+
+        let is_empty = windows.is_empty();
+        if !is_empty {
+            return false;
+        }
+
+        let (tx, rx) = channel();
+        callback(RunEvent::ExitRequested { code: None, tx });
+
+        let recv = rx.try_recv();
+        let should_prevent = matches!(recv, Ok(ExitRequestedEventAction::Prevent));
+
+        !should_prevent
+    }
 }
 
 impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
@@ -1376,60 +1448,15 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
             match m {
                 Message::Task(p) => p(),
                 Message::CloseWindow(id) => {
-                    let mut windows = self.context.windows.lock().unwrap();
-                    let label = windows.get(&id).map(|w| w.label.clone());
-                    if let Some(label) = label {
-                        let (tx, rx) = channel();
-                        callback(RunEvent::WindowEvent {
-                            label: label.clone(),
-                            event: WindowEvent::CloseRequested { signal_tx: tx },
-                        });
-
-                        let should_prevent = matches!(rx.try_recv(), Ok(true));
-                        if !should_prevent {
-                            windows.remove(&id);
-                            callback(RunEvent::WindowEvent {
-                                label,
-                                event: WindowEvent::Destroyed,
-                            });
-
-                            let is_empty = windows.is_empty();
-                            if is_empty {
-                                let (tx, rx) = channel();
-                                callback(RunEvent::ExitRequested { code: None, tx });
-
-                                let recv = rx.try_recv();
-                                let should_prevent =
-                                    matches!(recv, Ok(ExitRequestedEventAction::Prevent));
-
-                                if !should_prevent {
-                                    break;
-                                }
-                            }
-                        }
+                    let should_exit = self.handle_close_window_request(&mut callback, id, false);
+                    if should_exit {
+                        break;
                     }
                 }
                 Message::DestroyWindow(id) => {
-                    let mut windows = self.context.windows.lock().unwrap();
-                    let removed_window_label = windows.remove(&id).map(|w| w.label.clone());
-                    if let Some(label) = removed_window_label {
-                        callback(RunEvent::WindowEvent {
-                            label,
-                            event: WindowEvent::Destroyed,
-                        });
-                        let is_empty = windows.is_empty();
-                        if is_empty {
-                            let (tx, rx) = channel();
-                            callback(RunEvent::ExitRequested { code: None, tx });
-
-                            let recv = rx.try_recv();
-                            let should_prevent =
-                                matches!(recv, Ok(ExitRequestedEventAction::Prevent));
-
-                            if !should_prevent {
-                                break;
-                            }
-                        }
+                    let should_exit = self.handle_close_window_request(&mut callback, id, true);
+                    if should_exit {
+                        break;
                     }
                 }
                 Message::UserEvent(user_event) => callback(RunEvent::UserEvent(user_event)),
