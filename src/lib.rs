@@ -106,6 +106,7 @@ enum Message<T> {
     Task(Box<dyn FnOnce() + Send>),
     CloseWindow(WindowId),
     DestroyWindow(WindowId),
+    RequestExit(i32),
     UserEvent(T),
 }
 
@@ -322,6 +323,7 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
         }
     }
 
+    /// Unsupported, has no effect
     #[cfg(target_os = "macos")]
     #[cfg_attr(docsrs, doc(cfg(target_os = "macos")))]
     fn set_activation_policy(
@@ -332,7 +334,7 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
     }
 
     fn request_exit(&self, code: i32) -> Result<()> {
-        unimplemented!()
+        self.context.send_message(Message::RequestExit(code))
     }
 
     /// `after_window_creation` not supported
@@ -1455,6 +1457,20 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
                 Message::DestroyWindow(id) => {
                     let should_exit = self.handle_close_window_request(&mut callback, id, true);
                     if should_exit {
+                        break;
+                    }
+                }
+                Message::RequestExit(code) => {
+                    let (tx, rx) = channel();
+                    callback(RunEvent::ExitRequested {
+                        code: Some(code),
+                        tx,
+                    });
+
+                    let recv = rx.try_recv();
+                    let should_prevent = matches!(recv, Ok(ExitRequestedEventAction::Prevent));
+
+                    if !should_prevent {
                         break;
                     }
                 }
