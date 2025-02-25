@@ -7,12 +7,12 @@ use tauri_runtime::{
     monitor::Monitor,
     webview::{DetachedWebview, PendingWebview},
     window::{
-        CursorIcon, DetachedWindow, DetachedWindowWebview, PendingWindow, RawWindow, WindowBuilder,
-        WindowBuilderBase, WindowEvent, WindowId,
+        CursorIcon, DetachedWindow, DetachedWindowWebview, PendingWindow, RawWindow, WebviewEvent,
+        WindowBuilder, WindowBuilderBase, WindowEvent, WindowId,
     },
     DeviceEventFilter, Error, EventLoopProxy, ExitRequestedEventAction, Icon, ProgressBarState,
     Result, RunEvent, Runtime, RuntimeHandle, RuntimeInitArgs, UserAttentionType, UserEvent,
-    WebviewDispatch, WindowDispatch, WindowEventId,
+    WebviewDispatch, WebviewEventId, WindowDispatch, WindowEventId,
 };
 use tauri_utils::{config::WindowConfig, Theme};
 use url::Url;
@@ -668,10 +668,8 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher<T> {
         self.context.send_message(Message::Task(Box::new(f)))
     }
 
-    fn on_webview_event<F: Fn(&tauri_runtime::window::WebviewEvent) + Send + 'static>(
-        &self,
-        f: F,
-    ) -> tauri_runtime::WebviewEventId {
+    /// Unsupported, has no effect when called, the callback will not be called
+    fn on_webview_event<F: Fn(&WebviewEvent) + Send + 'static>(&self, f: F) -> WebviewEventId {
         self.context.next_window_event_id()
     }
 
@@ -820,6 +818,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
         self.context.send_message(Message::Task(Box::new(f)))
     }
 
+    /// Currently only [`WindowEvent::CloseRequested`] will be emitted
     fn on_window_event<F: Fn(&WindowEvent) + Send + 'static>(&self, f: F) -> WindowEventId {
         let id = self.context.next_window_event_id();
         self.on_window_event_listeners
