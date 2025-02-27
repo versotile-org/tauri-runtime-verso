@@ -11,10 +11,9 @@ tauri = { version = "2", default-features = false, features = [
     # Default features
     # "wry",
     # "compression",
-    "objc-exception",
     "common-controls-v6",
     # Additional features
     # "devtools",
 ] }
 tauri-runtime-verso = { path = "../../" }
-serde = "1"
+# serde = "1"

@@ -8,15 +8,15 @@ members = ["examples/helloworld"]
 
 [dependencies]
 verso = { path = "../verso/verso" }
-tauri = { version = "2", default-features = false }
-tauri-runtime = "=2.3.0"
-tauri-utils = "=2.1.1"
+tauri = { version = "=2.3.0", default-features = false }
+tauri-runtime = "=2.4.0"
+tauri-utils = "=2.2.0"
 raw-window-handle = "0.6"
 url = "2"
 http = "1"
 
 [target."cfg(windows)".dependencies]
-windows = "0.58"
+windows = "0.60"
 
 [target."cfg(any(target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\"))".dependencies]
 gtk = { version = "0.18", features = ["v3_24"] }
