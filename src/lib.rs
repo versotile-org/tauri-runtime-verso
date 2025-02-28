@@ -609,7 +609,7 @@ impl WindowBuilder for VersoWindowBuilder {
 
     /// Unsupported, has no effect
     #[cfg(target_os = "macos")]
-    fn title_bar_style(self, style: TitleBarStyle) -> Self {
+    fn title_bar_style(self, style: tauri_utils::TitleBarStyle) -> Self {
         self
     }
 
