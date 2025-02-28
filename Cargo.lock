@@ -3514,6 +3514,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 [[package]]
 name = "verso"
 version = "0.0.1"
+source = "git+https://github.com/versotile-org/verso#5f5e6e0eb4c8616df9ba559666bd2ffa2aa8df7f"
 dependencies = [
  "bincode",
  "dpi",
@@ -3528,6 +3529,7 @@ dependencies = [
 [[package]]
 name = "versoview_messages"
 version = "0.0.1"
+source = "git+https://github.com/versotile-org/verso#5f5e6e0eb4c8616df9ba559666bd2ffa2aa8df7f"
 dependencies = [
  "dpi",
  "headers",

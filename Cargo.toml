@@ -7,7 +7,7 @@ edition = "2021"
 members = ["examples/helloworld"]
 
 [dependencies]
-verso = { path = "../verso/verso" }
+verso = { git = "https://github.com/versotile-org/verso" }
 tauri = { version = "=2.3.0", default-features = false }
 tauri-runtime = "=2.4.0"
 tauri-utils = "=2.2.0"
@@ -20,3 +20,6 @@ windows = "0.60"
 
 [target."cfg(any(target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\"))".dependencies]
 gtk = { version = "0.18", features = ["v3_24"] }
+
+[patch.crates-io]
+# verso = { path = "../verso/verso" }
