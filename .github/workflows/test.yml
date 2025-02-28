@@ -11,8 +11,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-windows:
+  build-hello-world-example:
     strategy:
+      fail-fast: false
       matrix:
         platform:
           - ubuntu-latest
@@ -22,6 +23,12 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: matrix.platform.target == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libxdo-dev libayatana-appindicator3-dev
 
       - uses: Swatinem/rust-cache@v2
 
