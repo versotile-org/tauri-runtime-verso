@@ -6,6 +6,10 @@ edition = "2021"
 [workspace]
 members = ["examples/helloworld"]
 
+[features]
+# Required if you use tauri's macos-private-api feature
+macos-private-api = ["tauri-runtime/macos-private-api"]
+
 [dependencies]
 verso = { git = "https://github.com/versotile-org/verso" }
 tauri = { version = "=2.3.0", default-features = false }
