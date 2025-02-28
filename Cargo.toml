@@ -11,7 +11,7 @@ members = ["examples/helloworld"]
 macos-private-api = ["tauri-runtime/macos-private-api"]
 
 [dependencies]
-verso = { git = "https://github.com/versotile-org/verso" }
+verso = { git = "https://github.com/versotile-org/verso", rev = "5f5e6e0" }
 tauri = { version = "=2.3.0", default-features = false }
 tauri-runtime = "=2.4.0"
 tauri-utils = "=2.2.0"
