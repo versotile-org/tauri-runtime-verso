@@ -1,6 +1,4 @@
-#![allow(dead_code)]
 #![allow(unused)]
-#![allow(missing_docs)]
 
 use tauri_runtime::{
     dpi::{PhysicalPosition, PhysicalSize, Position, Size},
@@ -166,7 +164,7 @@ impl<T: UserEvent> RuntimeContext<T> {
     >(
         &self,
         pending: PendingWindow<T, R>,
-        after_window_creation: Option<F>,
+        _after_window_creation: Option<F>,
     ) -> Result<DetachedWindow<T, R>> {
         let label = pending.label;
         let Some(pending_webview) = pending.webview else {
@@ -203,54 +201,61 @@ impl<T: UserEvent> RuntimeContext<T> {
             },
         );
         let webview_label = label.clone();
-        webview.on_web_resource_requested(move |mut request, response_fn| {
-            // dbg!(&request);
-            // TODO: Servo's EmbedderMsg::WebResourceRequested message is sent too early
-            // that it doesn't include Origin header, so I hard coded this for now
-            if !request.request.headers().contains_key("Origin") {
-                request
-                    .request
-                    .headers_mut()
-                    .insert("Origin", "http://tauri.localhost/".parse().unwrap());
-            }
-            for (scheme, handler) in &pending_webview.uri_scheme_protocols {
-                // Since servo doesn't support body in its EmbedderMsg::WebResourceRequested yet,
-                // we use a head instead for now
-                if scheme == "ipc" {
-                    if let Some(data) = request
+        webview
+            .on_web_resource_requested(move |mut request, response_fn| {
+                // dbg!(&request);
+                // TODO: Servo's EmbedderMsg::WebResourceRequested message is sent too early
+                // that it doesn't include Origin header, so I hard coded this for now
+                if !request.request.headers().contains_key("Origin") {
+                    request
                         .request
                         .headers_mut()
-                        .remove("Tauri-VersoRuntime-Invoke-Body")
-                    {
-                        *request.request.body_mut() = data.as_bytes().to_vec();
+                        .insert("Origin", "http://tauri.localhost/".parse().unwrap());
+                }
+                for (scheme, handler) in &pending_webview.uri_scheme_protocols {
+                    // Since servo doesn't support body in its EmbedderMsg::WebResourceRequested yet,
+                    // we use a head instead for now
+                    if scheme == "ipc" {
+                        if let Some(data) = request
+                            .request
+                            .headers_mut()
+                            .remove("Tauri-VersoRuntime-Invoke-Body")
+                        {
+                            *request.request.body_mut() = data.as_bytes().to_vec();
+                        }
+                    }
+                    if is_custom_protocol_uri(&request.request.uri().to_string(), "http", scheme) {
+                        handler(
+                            &webview_label,
+                            request.request,
+                            Box::new(move |response| {
+                                response_fn(Some(response.map(|body| body.to_vec())));
+                            }),
+                        );
+                        return;
                     }
                 }
-                if is_custom_protocol_uri(&request.request.uri().to_string(), "http", scheme) {
-                    handler(
-                        &webview_label,
-                        request.request,
-                        Box::new(move |response| {
-                            response_fn(Some(response.map(|body| body.to_vec())));
-                        }),
-                    );
-                    return;
-                }
-            }
-            response_fn(None);
-        });
+                response_fn(None);
+            })
+            .map_err(|_| tauri_runtime::Error::CreateWindow)?;
         // for init_script in pending_webview.webview_attributes.initialization_scripts {
         //     webview.add_init_script(init_script);
         // }
         // webview.add_init_script("console.log('1')".to_owned());
 
         if let Some(navigation_handler) = pending_webview.navigation_handler {
-            webview.on_navigation_starting(move |url| navigation_handler(&url));
+            if let Err(error) = webview.on_navigation_starting(move |url| navigation_handler(&url))
+            {
+                log::error!("Register `on_navigation_starting` failed with {error}, `navigation_handler` will not get called for this window ({label})!");
+            }
         }
 
         let sender = self.run_tx.clone();
-        webview.on_close_requested(move || {
-            let _ = sender.send(Message::CloseWindow(window_id));
-        });
+        webview
+            .on_close_requested(move || {
+                let _ = sender.send(Message::CloseWindow(window_id));
+            })
+            .map_err(|_| tauri_runtime::Error::CreateWindow)?;
 
         let on_window_event_listeners = Arc::new(Mutex::new(HashMap::new()));
 

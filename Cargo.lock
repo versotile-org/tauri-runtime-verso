@@ -2975,6 +2975,7 @@ version = "0.1.0"
 dependencies = [
  "gtk",
  "http",
+ "log",
  "raw-window-handle",
  "tauri",
  "tauri-runtime",
