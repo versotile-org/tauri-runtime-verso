@@ -1,5 +1,6 @@
 #![allow(unused)]
 
+use tauri::{LogicalPosition, LogicalSize};
 use tauri_runtime::{
     dpi::{PhysicalPosition, PhysicalSize, Position, Size},
     monitor::Monitor,
@@ -192,10 +193,11 @@ impl<T: UserEvent> RuntimeContext<T> {
             Url::parse(&pending_webview.url).unwrap(),
             verso::VersoviewSettings {
                 with_panel: false,
-                resources_directory: get_verso_resource_directory()
-                    .map(|path| path.to_string_lossy().to_string()),
+                resources_directory: get_verso_resource_directory(),
                 userscripts_directory: Some("./userscripts".to_owned()),
                 maximized: pending.window_builder.maximized,
+                position: pending.window_builder.position.map(Into::into),
+                inner_size: pending.window_builder.size.map(Into::into),
                 // devtools_port: Some(1234),
                 ..Default::default()
             },
@@ -448,6 +450,8 @@ impl<T> Debug for VersoWindowDispatcher<T> {
 
 #[derive(Debug, Clone, Default)]
 pub struct VersoWindowBuilder {
+    pub position: Option<LogicalPosition<f64>>,
+    pub size: Option<LogicalSize<f64>>,
     pub maximized: bool,
 }
 
@@ -459,8 +463,16 @@ impl WindowBuilder for VersoWindowBuilder {
     }
 
     fn with_config(config: &WindowConfig) -> Self {
+        let position = if let (Some(x), Some(y)) = (config.x, config.y) {
+            Some(LogicalPosition::new(x, y))
+        } else {
+            None
+        };
+
         Self {
             maximized: config.maximized,
+            position,
+            size: Some(LogicalSize::new(config.width, config.height)),
             ..Default::default()
         }
     }
@@ -470,13 +482,15 @@ impl WindowBuilder for VersoWindowBuilder {
         self
     }
 
-    /// Unsupported, has no effect
-    fn position(self, x: f64, y: f64) -> Self {
+    /// Note: x and y are in logical unit
+    fn position(mut self, x: f64, y: f64) -> Self {
+        self.position.replace(LogicalPosition::new(x, y));
         self
     }
 
-    /// Unsupported, has no effect
-    fn inner_size(self, width: f64, height: f64) -> Self {
+    /// Note: width and height are in logical unit
+    fn inner_size(mut self, width: f64, height: f64) -> Self {
+        self.size.replace(LogicalSize::new(width, height));
         self
     }
 
