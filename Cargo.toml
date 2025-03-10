@@ -19,6 +19,7 @@ raw-window-handle = "0.6"
 url = "2"
 http = "1"
 log = "0.4"
+tempfile = "3"
 
 [target."cfg(windows)".dependencies]
 windows = "0.60"
@@ -26,5 +27,5 @@ windows = "0.60"
 [target."cfg(any(target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\"))".dependencies]
 gtk = { version = "0.18", features = ["v3_24"] }
 
-[patch.crates-io]
+[patch."https://github.com/versotile-org/verso"]
 # verso = { path = "../verso/verso" }

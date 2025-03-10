@@ -2980,6 +2980,7 @@ dependencies = [
  "tauri",
  "tauri-runtime",
  "tauri-utils",
+ "tempfile",
  "url",
  "verso",
  "windows 0.60.0",
