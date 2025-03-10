@@ -1321,14 +1321,14 @@ impl<T: UserEvent> VersoRuntime<T> {
             return false;
         };
         let label = window.label.clone();
-        let on_window_event_listeners = window.on_window_event_listeners.lock().unwrap();
+        let on_window_event_listeners = window.on_window_event_listeners.clone();
 
         if !force {
             let (tx, rx) = channel();
             let window_event = WindowEvent::CloseRequested {
                 signal_tx: tx.clone(),
             };
-            for handler in on_window_event_listeners.values() {
+            for handler in on_window_event_listeners.lock().unwrap().values() {
                 handler(&window_event);
             }
             callback(RunEvent::WindowEvent {
@@ -1341,13 +1341,16 @@ impl<T: UserEvent> VersoRuntime<T> {
                 return false;
             }
         }
-        drop(on_window_event_listeners);
 
         windows.remove(&id);
         callback(RunEvent::WindowEvent {
             label,
             event: WindowEvent::Destroyed,
         });
+
+        // This is required becuase tauri puts in a clone of the window in to WindowEventHandler closure,
+        // and we need to clear it for the window to drop or else it will stay there forever
+        on_window_event_listeners.lock().unwrap().clear();
 
         let is_empty = windows.is_empty();
         if !is_empty {
