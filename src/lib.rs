@@ -189,7 +189,7 @@ impl<T: UserEvent> RuntimeContext<T> {
             verso::VersoviewSettings {
                 with_panel: false,
                 resources_directory: get_verso_resource_directory(),
-                userscripts_directory: Some("./userscripts".to_owned()),
+                userscripts_directory: Some(temp_dir.path().to_string_lossy().to_string()),
                 maximized: pending.window_builder.maximized,
                 position: pending.window_builder.position.map(Into::into),
                 inner_size: pending.window_builder.size.map(Into::into),
