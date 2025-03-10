@@ -1502,8 +1502,6 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
         }
 
         callback(RunEvent::Exit);
-
-        let _ = cleanup_initialization_scripts_folder();
     }
 
     /// Unsupported, will always return PhysicalPosition { x: 0, y: 0 }
@@ -1516,11 +1514,11 @@ fn initialization_scripts_to_files(
     initialization_scripts: Vec<String>,
 ) -> io::Result<tempfile::TempDir> {
     let temp_dir = tempfile::env::temp_dir().join("versoview-servo-userscripts");
-    if let Ok(entries) = fs::read_dir(&temp_dir) {
-        for entry in entries {
-            let _ = fs::remove_dir_all(entry?.path());
-        }
-    }
+    // if let Ok(entries) = fs::read_dir(&temp_dir) {
+    //     for entry in entries {
+    //         let _ = fs::remove_dir_all(entry?.path());
+    //     }
+    // }
     fs::create_dir_all(&temp_dir)?;
     let temp_dir_for_this_instance = tempfile::tempdir_in(&temp_dir)?;
     let mut x = 1;
@@ -1534,7 +1532,7 @@ fn initialization_scripts_to_files(
     Ok(temp_dir_for_this_instance)
 }
 
-fn cleanup_initialization_scripts_folder() -> io::Result<()> {
+pub fn cleanup_initialization_scripts_folder() -> io::Result<()> {
     let temp_dir = tempfile::env::temp_dir().join("versoview-servo-userscripts");
     fs::remove_dir(temp_dir)
 }
