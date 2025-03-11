@@ -15,7 +15,7 @@ use tauri_runtime::{
 };
 use tauri_utils::{config::WindowConfig, Theme};
 use url::Url;
-use verso::VersoviewController;
+use verso::{VersoBuilder, VersoviewController};
 #[cfg(windows)]
 use windows::Win32::Foundation::HWND;
 
@@ -183,20 +183,12 @@ impl<T: UserEvent> RuntimeContext<T> {
         )
         .map_err(|_| tauri_runtime::Error::CreateWindow)?;
 
-        let webview = VersoviewController::new_with_settings(
-            get_verso_path(),
-            Url::parse(&pending_webview.url).unwrap(),
-            verso::VersoviewSettings {
-                with_panel: false,
-                resources_directory: get_verso_resource_directory(),
-                userscripts_directory: Some(temp_dir.path().to_string_lossy().to_string()),
-                maximized: pending.window_builder.maximized,
-                position: pending.window_builder.position.map(Into::into),
-                inner_size: pending.window_builder.size.map(Into::into),
-                // devtools_port: Some(1234),
-                ..Default::default()
-            },
-        );
+        let webview = pending
+            .window_builder
+            .verso_builder
+            .userscripts_directory(temp_dir.path().to_string_lossy())
+            .build(get_verso_path(), Url::parse(&pending_webview.url).unwrap());
+
         let webview_label = label.clone();
         webview
             .on_web_resource_requested(move |mut request, response_fn| {
@@ -444,11 +436,19 @@ impl<T> Debug for VersoWindowDispatcher<T> {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct VersoWindowBuilder {
-    pub position: Option<LogicalPosition<f64>>,
-    pub size: Option<LogicalSize<f64>>,
-    pub maximized: bool,
+    pub verso_builder: VersoBuilder,
+}
+
+impl Default for VersoWindowBuilder {
+    fn default() -> Self {
+        let mut verso_builder = VersoBuilder::new();
+        if let Some(resource_directory) = get_verso_resource_directory() {
+            verso_builder = verso_builder.resources_directory(resource_directory);
+        }
+        Self { verso_builder }
+    }
 }
 
 impl WindowBuilderBase for VersoWindowBuilder {}
@@ -459,18 +459,20 @@ impl WindowBuilder for VersoWindowBuilder {
     }
 
     fn with_config(config: &WindowConfig) -> Self {
-        let position = if let (Some(x), Some(y)) = (config.x, config.y) {
-            Some(LogicalPosition::new(x, y))
-        } else {
-            None
+        let mut builder = Self::default();
+        let mut verso_builder = builder.verso_builder;
+        verso_builder = verso_builder
+            .focused(config.focus)
+            .fullscreen(config.fullscreen)
+            .maximized(config.maximized)
+            .visible(config.visible)
+            .inner_size(LogicalSize::new(config.width, config.height));
+
+        if let (Some(x), Some(y)) = (config.x, config.y) {
+            verso_builder = verso_builder.position(LogicalPosition::new(x, y));
         };
 
-        Self {
-            maximized: config.maximized,
-            position,
-            size: Some(LogicalSize::new(config.width, config.height)),
-            ..Default::default()
-        }
+        Self { verso_builder }
     }
 
     /// Unsupported, has no effect
@@ -480,13 +482,15 @@ impl WindowBuilder for VersoWindowBuilder {
 
     /// Note: x and y are in logical unit
     fn position(mut self, x: f64, y: f64) -> Self {
-        self.position.replace(LogicalPosition::new(x, y));
+        self.verso_builder = self.verso_builder.position(LogicalPosition::new(x, y));
         self
     }
 
     /// Note: width and height are in logical unit
     fn inner_size(mut self, width: f64, height: f64) -> Self {
-        self.size.replace(LogicalSize::new(width, height));
+        self.verso_builder = self
+            .verso_builder
+            .inner_size(LogicalSize::new(width, height));
         self
     }
 
@@ -533,23 +537,23 @@ impl WindowBuilder for VersoWindowBuilder {
         self
     }
 
-    /// Unsupported, has no effect
-    fn fullscreen(self, fullscreen: bool) -> Self {
+    fn fullscreen(mut self, fullscreen: bool) -> Self {
+        self.verso_builder = self.verso_builder.fullscreen(fullscreen);
         self
     }
 
-    /// Unsupported, has no effect
-    fn focused(self, focused: bool) -> Self {
+    fn focused(mut self, focused: bool) -> Self {
+        self.verso_builder = self.verso_builder.focused(focused);
         self
     }
 
     fn maximized(mut self, maximized: bool) -> Self {
-        self.maximized = maximized;
+        self.verso_builder = self.verso_builder.maximized(maximized);
         self
     }
 
-    /// Unsupported, has no effect
-    fn visible(self, visible: bool) -> Self {
+    fn visible(mut self, visible: bool) -> Self {
+        self.verso_builder = self.verso_builder.visible(visible);
         self
     }
 
@@ -804,12 +808,16 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher<T> {
         Ok(())
     }
 
-    /// Unsupported, has no effect when called
+    /// Unsupported, has no effect when called,
+    /// the versoview controls both the webview and the window
+    /// use the method from the parent window instead
     fn hide(&self) -> Result<()> {
         Ok(())
     }
 
-    /// Unsupported, has no effect when called
+    /// Unsupported, has no effect when called,
+    /// the versoview controls both the webview and the window
+    /// use the method from the parent window instead
     fn show(&self) -> Result<()> {
         Ok(())
     }
