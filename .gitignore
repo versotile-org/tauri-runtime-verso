@@ -1,4 +1,2 @@
 /target
-
-# TODO: Remove this after https://github.com/servo/servo/pull/35388
-userscripts
+.vscode
