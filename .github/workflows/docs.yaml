@@ -39,7 +39,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./target/doc/tauri_runtime_verso
+          path: ./target/doc/
 
   deploy:
     runs-on: ubuntu-latest

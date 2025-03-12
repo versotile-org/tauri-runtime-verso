@@ -26,4 +26,4 @@ fn main() {
 }
 ```
 
-For more, take a look at the [hello world example](examples/helloworld)
+For more, take a look at the [hello world example](examples/helloworld), or the [documentation](https://versotile-org.github.io/tauri-runtime-verso/tauri_runtime_verso)
