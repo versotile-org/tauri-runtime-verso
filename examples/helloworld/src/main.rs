@@ -24,24 +24,6 @@ fn main() {
         })
         // Make sure to do this or some of the commands will not work
         .invoke_system(INVOKE_SYSTEM_SCRIPTS.to_owned())
-        // .on_window_event(|window, event| match event {
-        //     tauri::WindowEvent::CloseRequested { api , .. } => {
-        //         dbg!("CloseRequested");
-        //         api.prevent_close();
-        //     }
-        //     _ => {}
-        // })
         .run(tauri::generate_context!())
-        // .build(tauri::generate_context!())
         .expect("error while running tauri application")
-        // .run(|app, event| match event {
-        //     tauri::RunEvent::WindowEvent { event, .. } => match event {
-        //         tauri::WindowEvent::CloseRequested { api, .. } => {
-        //             dbg!("CloseRequested");
-        //             api.prevent_close();
-        //         }
-        //         _ => {}
-        //     },
-        //     _ => {}
-        // });
 }
