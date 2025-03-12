@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = ["examples/helloworld"]
+members = ["examples/helloworld", "examples/api/src-tauri"]
 
 [features]
 # Required if you use tauri's macos-private-api feature

@@ -1,6 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use tauri::Manager;
 use tauri_runtime_verso::{set_verso_path, set_verso_resource_directory, INVOKE_SYSTEM_SCRIPTS};
 
 #[tauri::command]
@@ -11,37 +10,21 @@ fn greet(name: &str) -> String {
 fn main() {
     // You need to set this to the path of the versoview executable
     // before creating any of the webview windows
-    set_verso_path("../verso/target/debug/versoview");
+    set_verso_path("../../../../verso/target/debug/versoview");
     // Set this to verso/servo's resources directory before creating any of the webview windows
     // this is optional but recommanded, this directory will include very important things
     // like user agent stylesheet
-    set_verso_resource_directory("../verso/resources");
+    set_verso_resource_directory("../../../../verso/resources");
     tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
+        .plugin(
+            tauri_plugin_log::Builder::default()
+                .level(log::LevelFilter::Info)
+                .build(),
+        )
+        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![greet])
-        .setup(|app| {
-            dbg!(app.get_webview_window("main").unwrap().inner_size()).unwrap();
-            Ok(())
-        })
         // Make sure to do this or some of the commands will not work
         .invoke_system(INVOKE_SYSTEM_SCRIPTS.to_owned())
-        // .on_window_event(|window, event| match event {
-        //     tauri::WindowEvent::CloseRequested { api , .. } => {
-        //         dbg!("CloseRequested");
-        //         api.prevent_close();
-        //     }
-        //     _ => {}
-        // })
         .run(tauri::generate_context!())
-        // .build(tauri::generate_context!())
         .expect("error while running tauri application")
-        // .run(|app, event| match event {
-        //     tauri::RunEvent::WindowEvent { event, .. } => match event {
-        //         tauri::WindowEvent::CloseRequested { api, .. } => {
-        //             dbg!("CloseRequested");
-        //             api.prevent_close();
-        //         }
-        //         _ => {}
-        //     },
-        //     _ => {}
-        // });
 }

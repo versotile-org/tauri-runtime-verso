@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "identifier": "com.tauri.dev",
   "build": {
-    "frontendDist": ["index.html"]
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm web:build"
   },
   "app": {
     "withGlobalTauri": true,
@@ -18,8 +20,8 @@
   },
   "bundle": {
     "icon": [
-      "../.icons/icon.ico",
-      "../.icons/icon.png"
+      "../../.icons/icon.ico",
+      "../../.icons/icon.png"
     ]
   }
 }
