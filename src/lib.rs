@@ -1570,6 +1570,7 @@ fn initialization_scripts_to_files(
     Ok(temp_dir_for_this_instance)
 }
 
+/// Clean up temporary initialization scripts folder
 pub fn cleanup_initialization_scripts_folder() -> io::Result<()> {
     let temp_dir = tempfile::env::temp_dir().join("versoview-servo-userscripts");
     fs::remove_dir(temp_dir)

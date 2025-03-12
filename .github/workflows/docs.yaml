@@ -23,7 +23,8 @@ env:
 
 jobs:
   generate-docs:
-    runs-on: ubuntu-latest
+    # Using macos since it's github's fastest runner
+    runs-on: macos-latest
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4
@@ -38,7 +39,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./target/doc
+          path: ./target/doc/tauri_runtime_verso
 
   deploy:
     runs-on: ubuntu-latest
