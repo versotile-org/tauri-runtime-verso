@@ -132,6 +132,21 @@ fn get_verso_resource_directory() -> Option<PathBuf> {
 /// ```
 pub const INVOKE_SYSTEM_SCRIPTS: &str = include_str!("./invoke-system-initialization-script.js");
 
+static DEV_TOOLS_PORT: Mutex<Option<u16>> = Mutex::new(None);
+
+/// Sets the devtools port
+///
+/// Since Verso doesn't have devtools built-in,
+/// you need to use the one from Firefox,
+/// this setting allows you to let verso open a port for it
+pub fn set_verso_devtools_port(port: u16) {
+    DEV_TOOLS_PORT.lock().unwrap().replace(port);
+}
+
+fn get_verso_devtools_port() -> Option<u16> {
+    *DEV_TOOLS_PORT.lock().unwrap()
+}
+
 enum Message<T> {
     Task(Box<dyn FnOnce() + Send>),
     CloseWindow(WindowId),
@@ -476,6 +491,9 @@ impl Default for VersoWindowBuilder {
         let mut verso_builder = VersoBuilder::new();
         if let Some(resource_directory) = get_verso_resource_directory() {
             verso_builder = verso_builder.resources_directory(resource_directory);
+        }
+        if let Some(devtools_port) = get_verso_devtools_port() {
+            verso_builder = verso_builder.devtools_port(devtools_port);
         }
         Self { verso_builder }
     }
