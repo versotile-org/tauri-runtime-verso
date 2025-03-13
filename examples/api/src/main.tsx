@@ -1,37 +1,36 @@
-import { StrictMode, useState } from 'react'
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { TitleBar } from './title-bar'
-import { invoke } from '@tauri-apps/api/core'
+import { TitleBar } from './components/title-bar'
+import { error } from '@tauri-apps/plugin-log'
+import { HelloWorld, LoggingExample } from './components/api-forms'
+
+window.addEventListener('error', async (event) => {
+	try {
+		await error(event.error)
+	} catch (error) {
+		console.error(error)
+	}
+})
+window.addEventListener('unhandledrejection', async (event) => {
+	try {
+		await error(
+			typeof event.reason === 'object'
+				? JSON.stringify(event.reason, undefined, 4)
+				: String(event.reason),
+		)
+	} catch (error) {
+		console.error(error)
+	}
+})
 
 function App() {
-	const [name, setName] = useState('')
-	const [message, setMessage] = useState('')
-
 	return (
 		<>
 			<TitleBar />
 
-			<h1 className="title">Welcome to Tauri!</h1>
-
-			<div className="form-and-message">
-				<form
-					id="form"
-					onSubmit={async (ev) => {
-						ev.preventDefault()
-						const newMessage = await invoke<string>('greet', { name })
-						setMessage(newMessage)
-					}}
-				>
-					<input
-						id="name"
-						placeholder="Enter a name..."
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-					/>
-					<button>Greet</button>
-				</form>
-				<div id="message">{message}</div>
-			</div>
+			<h1 className="title">Verso (Servo) + Tauri!</h1>
+			<HelloWorld />
+			<LoggingExample />
 		</>
 	)
 }

@@ -1,0 +1,50 @@
+.form-and-message {
+	background-color: aliceblue;
+	padding: 1em;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+    align-items: center;
+	gap: 1em;
+}
+
+.form-and-message.logging-example {
+	background-color: azure;
+}
+
+.form-and-message > form {
+	display: flex;
+	justify-content: center;
+	gap: 1em;
+}
+
+.form-and-message > .message {
+	display: flex;
+	justify-content: center;
+}
+
+.form-and-message > form input {
+	padding: 0.5em 0.8em;
+	border: 1px solid hsl(0, 0%, 60%);
+	outline: none;
+	min-width: 0;
+}
+.form-and-message > form input:focus {
+	border-color: var(--color-primary);
+}
+
+.form-and-message button {
+	appearance: none;
+	border: none;
+	cursor: pointer;
+	outline: none;
+	padding: 0.4em 1em;
+	color: var(--color-on-primary);
+	background-color: var(--color-primary);
+	display: inline-flex;
+	align-items: center;
+}
+.form-and-message button:hover,
+.form-and-message button:focus {
+	background-color: var(--color-primary-hightlight);
+}

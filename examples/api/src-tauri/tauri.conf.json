@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Hello World",
+  "productName": "Verso Tauri API",
   "version": "0.1.0",
   "identifier": "com.tauri.dev",
   "build": {
