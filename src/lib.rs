@@ -1130,7 +1130,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
 
     fn show(&self) -> Result<()> {
         // TODO: Find a good enum value to map and propagate the error
-        self.webview.lock().unwrap().set_visible(false).unwrap();
+        self.webview.lock().unwrap().set_visible(true).unwrap();
         Ok(())
     }
 
