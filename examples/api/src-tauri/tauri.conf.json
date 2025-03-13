@@ -9,19 +9,18 @@
     "beforeBuildCommand": "pnpm web:build"
   },
   "app": {
-    "withGlobalTauri": true,
-    "windows": [
-      {
-        "title": "Welcome to Tauri!",
-        "width": 800,
-        "height": 600
-      }
-    ]
+    "withGlobalTauri": true
   },
   "bundle": {
     "icon": [
       "../../.icons/icon.ico",
       "../../.icons/icon.png"
-    ]
+    ],
+    "externalBin": [
+      "../../../../verso/target/debug/versoview"
+    ],
+    "resources": {
+      "../../../../verso/resources": "verso-resources"
+    }
   }
 }
