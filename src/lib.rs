@@ -134,7 +134,7 @@ pub const INVOKE_SYSTEM_SCRIPTS: &str = include_str!("./invoke-system-initializa
 
 static DEV_TOOLS_PORT: Mutex<Option<u16>> = Mutex::new(None);
 
-/// Sets the devtools port
+/// Sets the Verso devtools port to ues for the webviews, note this only affects webviews created after you set this
 ///
 /// Since Verso doesn't have devtools built-in,
 /// you need to use the one from Firefox,
@@ -155,8 +155,8 @@ enum Message<T> {
     UserEvent(T),
 }
 
-pub type WindowEventHandler = Box<dyn Fn(&WindowEvent) + Send>;
-pub type WindowEventListeners = Arc<Mutex<HashMap<WindowEventId, WindowEventHandler>>>;
+type WindowEventHandler = Box<dyn Fn(&WindowEvent) + Send>;
+type WindowEventListeners = Arc<Mutex<HashMap<WindowEventId, WindowEventHandler>>>;
 
 struct Window {
     label: String,
