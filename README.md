@@ -26,4 +26,6 @@ fn main() {
 }
 ```
 
-For more, take a look at the [hello world example](examples/helloworld), or the [documentation](https://versotile-org.github.io/tauri-runtime-verso/tauri_runtime_verso)
+For more, take a look at the [hello world example](examples/helloworld), or a more sophisticated [api example](examples/api) show casing how you can use [`react`](https://react.dev/) in it and how to bundle the versoview executable and resource directory with `tauri-cli`'s bundler feature so you can actually easily distribute your app
+
+Also, you can checkout the [documentation](https://versotile-org.github.io/tauri-runtime-verso/tauri_runtime_verso)
