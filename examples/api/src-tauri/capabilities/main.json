@@ -11,14 +11,14 @@
     "core:window:allow-close",
     "core:window:allow-start-dragging",
     "opener:default",
-		{
-			"identifier": "opener:allow-open-path",
-			"allow": [
-				{
-					"path": "$APPLOG/**"
-				}
-			]
-		},
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        {
+          "path": "$APPLOG/**"
+        }
+      ]
+    },
     "log:default"
   ]
 }
