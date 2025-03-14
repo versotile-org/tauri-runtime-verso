@@ -44,7 +44,7 @@ fn setup_verso_paths(app: &App<VersoRuntime>) -> Result<(), Box<dyn std::error::
     let verso_resources_path = app
         .path()
         .resolve("verso-resources", BaseDirectory::Resource)?;
-    set_verso_resource_directory(dbg!(verso_resources_path));
+    set_verso_resource_directory(verso_resources_path);
     let verso_path = side_car_path("versoview").ok_or("Can't get verso path")?;
     set_verso_path(verso_path);
     Ok(())
