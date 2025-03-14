@@ -349,6 +349,7 @@ impl<T> Debug for RuntimeContext<T> {
     }
 }
 
+/// A handle to the [`VersoRuntime`] runtime.
 #[derive(Debug, Clone)]
 pub struct VersoRuntimeHandle<T> {
     context: RuntimeContext<T>,
@@ -446,6 +447,7 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
     }
 }
 
+/// The Tauri [`WebviewDispatch`] for [`VersoRuntime`].
 #[derive(Clone)]
 pub struct VersoWebviewDispatcher<T> {
     id: u32,
@@ -463,6 +465,7 @@ impl<T> Debug for VersoWebviewDispatcher<T> {
     }
 }
 
+/// The Tauri [`WindowDispatch`] for [`VersoRuntime`].
 #[derive(Clone)]
 pub struct VersoWindowDispatcher<T> {
     id: WindowId,
@@ -1338,6 +1341,7 @@ impl<T: UserEvent> EventLoopProxy<T> for EventProxy<T> {
     }
 }
 
+/// A Tauri Runtime wrapper around Verso.
 #[derive(Debug)]
 pub struct VersoRuntime<T: UserEvent = tauri::EventLoopMessage> {
     pub context: RuntimeContext<T>,
