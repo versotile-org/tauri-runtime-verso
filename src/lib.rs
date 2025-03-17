@@ -314,11 +314,11 @@ impl<T: UserEvent> RuntimeContext<T> {
             },
             webview: Some(DetachedWindowWebview {
                 webview: DetachedWebview {
-                    label: label.clone(),
+                    label,
                     dispatcher: VersoWebviewDispatcher {
                         id: webview_id,
                         context: self.clone(),
-                        webview: webview.clone(),
+                        webview,
                     },
                 },
                 use_https_scheme: false,
