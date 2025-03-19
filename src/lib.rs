@@ -32,6 +32,9 @@
 
 use tauri::{LogicalPosition, LogicalSize};
 use tauri_runtime::{
+    DeviceEventFilter, Error, EventLoopProxy, ExitRequestedEventAction, Icon, ProgressBarState,
+    Result, RunEvent, Runtime, RuntimeHandle, RuntimeInitArgs, UserAttentionType, UserEvent,
+    WebviewDispatch, WebviewEventId, WindowDispatch, WindowEventId,
     dpi::{PhysicalPosition, PhysicalSize, Position, Size},
     monitor::Monitor,
     webview::{DetachedWebview, PendingWebview},
@@ -39,11 +42,8 @@ use tauri_runtime::{
         CursorIcon, DetachedWindow, DetachedWindowWebview, PendingWindow, RawWindow, WebviewEvent,
         WindowBuilder, WindowBuilderBase, WindowEvent, WindowId,
     },
-    DeviceEventFilter, Error, EventLoopProxy, ExitRequestedEventAction, Icon, ProgressBarState,
-    Result, RunEvent, Runtime, RuntimeHandle, RuntimeInitArgs, UserAttentionType, UserEvent,
-    WebviewDispatch, WebviewEventId, WindowDispatch, WindowEventId,
 };
-use tauri_utils::{config::WindowConfig, Theme};
+use tauri_utils::{Theme, config::WindowConfig};
 use url::Url;
 use verso::{VersoBuilder, VersoviewController};
 #[cfg(windows)]
@@ -56,9 +56,9 @@ use std::{
     io::{self},
     path::{Path, PathBuf},
     sync::{
-        atomic::{AtomicU32, Ordering},
-        mpsc::{channel, sync_channel, Receiver, SyncSender},
         Arc, Mutex, OnceLock,
+        atomic::{AtomicU32, Ordering},
+        mpsc::{Receiver, SyncSender, channel, sync_channel},
     },
 };
 
@@ -204,10 +204,10 @@ impl<T: UserEvent> RuntimeContext<T> {
     /// will return [`tauri_runtime::Error::CreateWindow`] if there is no [`PendingWindow::webview`]
     fn create_window<
         R: Runtime<
-            T,
-            WindowDispatcher = VersoWindowDispatcher<T>,
-            WebviewDispatcher = VersoWebviewDispatcher<T>,
-        >,
+                T,
+                WindowDispatcher = VersoWindowDispatcher<T>,
+                WebviewDispatcher = VersoWebviewDispatcher<T>,
+            >,
         F: Fn(RawWindow<'_>) + Send + 'static,
     >(
         &self,
@@ -280,7 +280,9 @@ impl<T: UserEvent> RuntimeContext<T> {
         if let Some(navigation_handler) = pending_webview.navigation_handler {
             if let Err(error) = webview.on_navigation_starting(move |url| navigation_handler(&url))
             {
-                log::error!("Register `on_navigation_starting` failed with {error}, `navigation_handler` will not get called for this window ({label})!");
+                log::error!(
+                    "Register `on_navigation_starting` failed with {error}, `navigation_handler` will not get called for this window ({label})!"
+                );
             }
         }
 

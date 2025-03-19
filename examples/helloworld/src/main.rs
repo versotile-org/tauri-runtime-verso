@@ -1,7 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use tauri::Manager;
-use tauri_runtime_verso::{set_verso_path, set_verso_resource_directory, INVOKE_SYSTEM_SCRIPTS};
+use tauri_runtime_verso::{INVOKE_SYSTEM_SCRIPTS, set_verso_path, set_verso_resource_directory};
 
 #[tauri::command]
 fn greet(name: &str) -> String {

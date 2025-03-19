@@ -3,10 +3,10 @@
 use std::path::PathBuf;
 
 use tauri::{
-    path::BaseDirectory, utils::platform::current_exe, App, Manager, WebviewWindowBuilder,
+    App, Manager, WebviewWindowBuilder, path::BaseDirectory, utils::platform::current_exe,
 };
 use tauri_runtime_verso::{
-    set_verso_path, set_verso_resource_directory, VersoRuntime, INVOKE_SYSTEM_SCRIPTS,
+    INVOKE_SYSTEM_SCRIPTS, VersoRuntime, set_verso_path, set_verso_resource_directory,
 };
 
 #[tauri::command]
