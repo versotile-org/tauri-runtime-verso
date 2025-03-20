@@ -881,12 +881,15 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher<T> {
     }
 
     /// Unsupported, has no effect when called
+    #[cfg(debug_assertions)]
     fn open_devtools(&self) {}
 
     /// Unsupported, has no effect when called
+    #[cfg(debug_assertions)]
     fn close_devtools(&self) {}
 
     /// Always false since we don't have devtools built-in
+    #[cfg(debug_assertions)]
     fn is_devtools_open(&self) -> Result<bool> {
         Ok(false)
     }
