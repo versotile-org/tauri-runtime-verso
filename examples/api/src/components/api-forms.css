@@ -1,15 +1,24 @@
+.forms-group {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5em;
+}
+
 .form-and-message {
-	background-color: aliceblue;
-	padding: 1em;
+	background-color: var(--color-secondary-background);
+	padding: 1.5em;
+
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	gap: 1em;
+	gap: 2em;
 }
 
-.form-and-message.logging-example {
-	background-color: azure;
+.form-and-message > h2 {
+	font-size: 1.4em;
+	font-weight: 600;
+	margin: 0;
 }
 
 .form-and-message > form {
@@ -28,6 +37,7 @@
 	border: 1px solid hsl(0, 0%, 60%);
 	outline: none;
 	min-width: 0;
+	width: 14em;
 }
 .form-and-message > form input:focus {
 	border-color: var(--color-primary);

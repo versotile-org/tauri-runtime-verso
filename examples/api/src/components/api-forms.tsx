@@ -7,11 +7,21 @@ import { openPath } from '@tauri-apps/plugin-opener'
 
 import './api-forms.css'
 
+export function FormsGroup() {
+	return (
+		<div className="forms-group">
+			<HelloWorld />
+			<LoggingExample />
+		</div>
+	)
+}
+
 export function HelloWorld() {
 	const [name, setName] = useState('')
 	const [message, setMessage] = useState('')
 	return (
 		<div className="form-and-message">
+			<h2>Greet Command Example</h2>
 			<form
 				onSubmit={async (ev) => {
 					ev.preventDefault()
@@ -35,6 +45,7 @@ export function LoggingExample() {
 	const [name, setName] = useState('')
 	return (
 		<div className="form-and-message logging-example">
+			<h2>Log Plugin Command Example</h2>
 			<form
 				onSubmit={async (ev) => {
 					ev.preventDefault()

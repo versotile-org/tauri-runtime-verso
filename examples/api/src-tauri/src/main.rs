@@ -31,7 +31,7 @@ fn main() {
             setup_verso_paths(&app)?;
 
             WebviewWindowBuilder::new(app, "main", Default::default())
-                .inner_size(800., 600.)
+                .inner_size(900., 700.)
                 .build()?;
 
             Ok(())
