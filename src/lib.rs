@@ -447,6 +447,27 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
     ) -> std::result::Result<raw_window_handle::DisplayHandle, raw_window_handle::HandleError> {
         Err(raw_window_handle::HandleError::NotSupported)
     }
+
+    /// Unsupported, has no effect, the callback will not be called
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg_attr(docsrs, doc(cfg(any(target_os = "macos", target_os = "ios"))))]
+    fn fetch_data_store_identifiers<F: FnOnce(Vec<[u8; 16]>) + Send + 'static>(
+        &self,
+        cb: F,
+    ) -> Result<()> {
+        Ok(())
+    }
+
+    /// Unsupported, has no effect, the callback will not be called
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg_attr(docsrs, doc(cfg(any(target_os = "macos", target_os = "ios"))))]
+    fn remove_data_store<F: FnOnce(Result<()>) + Send + 'static>(
+        &self,
+        uuid: [u8; 16],
+        cb: F,
+    ) -> Result<()> {
+        Ok(())
+    }
 }
 
 /// The Tauri [`WebviewDispatch`] for [`VersoRuntime`].
@@ -893,6 +914,21 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher<T> {
     fn is_devtools_open(&self) -> Result<bool> {
         Ok(false)
     }
+
+    /// Unsupported, has no effect when called
+    fn reload(&self) -> Result<()> {
+        Ok(())
+    }
+
+    /// Unsupported, always returns an empty vector
+    fn cookies_for_url(&self, url: Url) -> Result<Vec<tauri_runtime::Cookie<'static>>> {
+        Ok(Vec::new())
+    }
+
+    /// Unsupported, always returns an empty vector
+    fn cookies(&self) -> Result<Vec<tauri_runtime::Cookie<'static>>> {
+        Ok(Vec::new())
+    }
 }
 
 impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
@@ -1331,6 +1367,16 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     {
         Err(raw_window_handle::HandleError::NotSupported)
     }
+
+    /// Unsupported, always returns false
+    fn is_always_on_top(&self) -> Result<bool> {
+        Ok(false)
+    }
+
+    /// Unsupported, has no effect when called
+    fn set_traffic_light_position(&self, position: Position) -> Result<()> {
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -1519,18 +1565,14 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
     fn set_device_event_filter(&mut self, filter: DeviceEventFilter) {}
 
     /// Unsupported, has no effect when called
-    #[cfg(any(
-        target_os = "macos",
-        windows,
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
     fn run_iteration<F: FnMut(RunEvent<T>)>(&mut self, callback: F) {}
 
     fn run<F: FnMut(RunEvent<T>) + 'static>(self, mut callback: F) {
+        let exit_code = self.run_return(callback);
+        // std::process::exit(exit_code);
+    }
+
+    fn run_return<F: FnMut(RunEvent<T>) + 'static>(self, mut callback: F) -> i32 {
         callback(RunEvent::Ready);
 
         while let Ok(m) = self.run_rx.recv() {
@@ -1567,6 +1609,8 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
         }
 
         callback(RunEvent::Exit);
+
+        0
     }
 
     /// Unsupported, will always return PhysicalPosition { x: 0, y: 0 }

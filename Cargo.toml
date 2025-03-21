@@ -11,10 +11,10 @@ members = ["examples/helloworld", "examples/api/src-tauri"]
 macos-private-api = ["tauri-runtime/macos-private-api"]
 
 [dependencies]
-verso = { git = "https://github.com/versotile-org/verso", rev = "1e3d4e17d56262f60bc089568fca61211bf80d90" }
-tauri = { version = "=2.3.1", default-features = false }
-tauri-runtime = "=2.4.0"
-tauri-utils = "=2.2.0"
+verso = { git = "https://github.com/versotile-org/verso", rev = "58bd22b5ead5b1531c4142a4c22e34b296cdee9c" }
+tauri = { version = "=2.4.0", default-features = false }
+tauri-runtime = "=2.5.0"
+tauri-utils = "=2.3.0"
 raw-window-handle = "0.6"
 url = "2"
 http = "1"
@@ -29,3 +29,6 @@ gtk = { version = "0.18", features = ["v3_24"] }
 
 [patch."https://github.com/versotile-org/verso"]
 # verso = { path = "../verso/verso" }
+
+[lints.clippy]
+needless_doctest_main = "allow"
