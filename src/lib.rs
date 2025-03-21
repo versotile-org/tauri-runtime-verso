@@ -719,6 +719,12 @@ impl WindowBuilder for VersoWindowBuilder {
     }
 
     /// Unsupported, has no effect
+    #[cfg(target_os = "macos")]
+    fn traffic_light_position<P: Into<Position>>(self, position: P) -> Self {
+        self
+    }
+
+    /// Unsupported, has no effect
     fn theme(self, theme: Option<Theme>) -> Self {
         self
     }
