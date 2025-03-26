@@ -13,7 +13,7 @@ fn main() {
     // before creating any of the webview windows
     set_verso_path("../verso/target/debug/versoview");
     // Set this to verso/servo's resources directory before creating any of the webview windows
-    // this is optional but recommanded, this directory will include very important things
+    // this is optional but recommended, this directory will include very important things
     // like user agent stylesheet
     set_verso_resource_directory("../verso/resources");
     tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
