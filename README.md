@@ -7,7 +7,6 @@ Use Verso as the backend for Tauri
 ## Usage
 
 ```rust
-use tauri::Manager;
 use tauri_runtime_verso::{set_verso_path, set_verso_resource_directory, INVOKE_SYSTEM_SCRIPTS};
 
 fn main() {
