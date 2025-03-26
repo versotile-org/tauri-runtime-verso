@@ -7,7 +7,9 @@ Use Verso as the backend for Tauri
 ## Usage
 
 ```rust
-use tauri_runtime_verso::{set_verso_path, set_verso_resource_directory, INVOKE_SYSTEM_SCRIPTS};
+use tauri_runtime_verso::{
+    INVOKE_SYSTEM_SCRIPTS, VersoRuntime, set_verso_path, set_verso_resource_directory,
+};
 
 fn main() {
     // You need to set this to the path of the versoview executable
@@ -17,7 +19,7 @@ fn main() {
     // this is optional but recommended, this directory will include very important things
     // like user agent stylesheet
     set_verso_resource_directory("../verso/resources");
-    tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
+    tauri::Builder::<VersoRuntime>::new()
         // Make sure to do this or some of the commands will not work
         .invoke_system(INVOKE_SYSTEM_SCRIPTS.to_owned())
         .run(tauri::generate_context!())

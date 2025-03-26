@@ -15,7 +15,7 @@ fn greet(name: &str) -> String {
 }
 
 fn main() {
-    tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
+    tauri::Builder::<VersoRuntime>::new()
         .plugin(
             tauri_plugin_log::Builder::default()
                 .level(log::LevelFilter::Info)

@@ -1,7 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use tauri::Manager;
-use tauri_runtime_verso::{INVOKE_SYSTEM_SCRIPTS, set_verso_path, set_verso_resource_directory};
+use tauri_runtime_verso::{
+    INVOKE_SYSTEM_SCRIPTS, VersoRuntime, set_verso_path, set_verso_resource_directory,
+};
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -16,7 +18,7 @@ fn main() {
     // this is optional but recommended, this directory will include very important things
     // like user agent stylesheet
     set_verso_resource_directory("../verso/resources");
-    tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
+    tauri::Builder::<VersoRuntime>::new()
         .invoke_handler(tauri::generate_handler![greet])
         .setup(|app| {
             dbg!(app.get_webview_window("main").unwrap().inner_size()).unwrap();
