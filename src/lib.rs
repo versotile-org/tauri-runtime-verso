@@ -259,8 +259,15 @@ impl<T: UserEvent> RuntimeContext<T> {
                         }
                     }
                     #[cfg(windows)]
-                    let is_custom_protocol_uri =
-                        is_custom_protocol_uri(&request.request.uri().to_string(), "http", scheme);
+                    let is_custom_protocol_uri = is_custom_protocol_uri(
+                        &request.request.uri().to_string(),
+                        if pending_webview.webview_attributes.use_https_scheme {
+                            "https"
+                        } else {
+                            "http"
+                        },
+                        scheme,
+                    );
                     #[cfg(not(windows))]
                     let is_custom_protocol_uri = request.request.uri().scheme_str() == Some(scheme);
                     if is_custom_protocol_uri {
