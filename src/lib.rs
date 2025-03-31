@@ -258,7 +258,12 @@ impl<T: UserEvent> RuntimeContext<T> {
                             *request.request.body_mut() = data.as_bytes().to_vec();
                         }
                     }
-                    if is_custom_protocol_uri(&request.request.uri().to_string(), "http", scheme) {
+                    #[cfg(windows)]
+                    let is_custom_protocol_uri =
+                        is_custom_protocol_uri(&request.request.uri().to_string(), "http", scheme);
+                    #[cfg(not(windows))]
+                    let is_custom_protocol_uri = request.request.uri().scheme_str() == Some(scheme);
+                    if is_custom_protocol_uri {
                         handler(
                             &webview_label,
                             request.request,
@@ -330,6 +335,7 @@ impl<T: UserEvent> RuntimeContext<T> {
 }
 
 // Copied from wry
+#[cfg(windows)]
 fn is_custom_protocol_uri(uri: &str, http_or_https: &'static str, protocol: &str) -> bool {
     let uri_len = uri.len();
     let scheme_len = http_or_https.len();
