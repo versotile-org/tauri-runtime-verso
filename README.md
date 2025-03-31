@@ -1,6 +1,6 @@
 # Tauri Runtime Verso
 
-Use Verso as the backend for Tauri
+Use [Verso](https://github.com/versotile-org/verso) as the backend for Tauri
 
 > Currently still working in progress
 
