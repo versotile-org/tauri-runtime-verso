@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use tauri::{
-    App, Manager, WebviewWindowBuilder, path::BaseDirectory, utils::platform::current_exe,
+    App, Manager, Runtime, WebviewWindowBuilder, path::BaseDirectory, utils::platform::current_exe,
 };
 use tauri_runtime_verso::{
     INVOKE_SYSTEM_SCRIPTS, VersoRuntime, set_verso_path, set_verso_resource_directory,
@@ -40,7 +40,7 @@ fn main() {
         .expect("error while running tauri application")
 }
 
-fn setup_verso_paths(app: &App<VersoRuntime>) -> Result<(), Box<dyn std::error::Error>> {
+fn setup_verso_paths<R: Runtime>(app: &App<R>) -> Result<(), Box<dyn std::error::Error>> {
     let verso_resources_path = app
         .path()
         .resolve("verso-resources", BaseDirectory::Resource)?;
