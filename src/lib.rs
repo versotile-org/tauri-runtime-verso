@@ -268,7 +268,7 @@ impl<T: UserEvent> RuntimeContext<T> {
                             &webview_label,
                             request.request,
                             Box::new(move |response| {
-                                response_fn(Some(response.map(|body| body.to_vec())));
+                                response_fn(Some(response.map(std::borrow::Cow::into_owned)));
                             }),
                         );
                         return;
@@ -437,7 +437,7 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
         Ok(())
     }
 
-    /// Unsupported, will always return PhysicalPosition { x: 0, y: 0 }
+    /// Unsupported, will always return `PhysicalPosition { x: 0, y: 0 }`
     fn cursor_position(&self) -> Result<PhysicalPosition<f64>> {
         Ok(PhysicalPosition::default())
     }
@@ -962,7 +962,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
         Ok(self.webview.lock().unwrap().get_scale_factor().unwrap())
     }
 
-    /// Always return PhysicalPosition { x: 0, y: 0 } on Wayland
+    /// Always return `PhysicalPosition { x: 0, y: 0 }` on Wayland
     fn inner_position(&self) -> Result<PhysicalPosition<i32>> {
         // TODO: Find a good enum value to map and propagate the error
         Ok(self
@@ -974,7 +974,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
             .unwrap_or_default())
     }
 
-    /// Always return PhysicalPosition { x: 0, y: 0 } on Wayland
+    /// Always return `PhysicalPosition { x: 0, y: 0 }` on Wayland
     fn outer_position(&self) -> Result<PhysicalPosition<i32>> {
         // TODO: Find a good enum value to map and propagate the error
         Ok(self
@@ -1071,7 +1071,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
         Ok(Vec::new())
     }
 
-    /// Unsupported, always returns [Theme::Light]
+    /// Unsupported, always returns [`Theme::Light`]
     fn theme(&self) -> Result<Theme> {
         Ok(Theme::Light)
     }
@@ -1620,7 +1620,7 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
         0
     }
 
-    /// Unsupported, will always return PhysicalPosition { x: 0, y: 0 }
+    /// Unsupported, will always return `PhysicalPosition { x: 0, y: 0 }`
     fn cursor_position(&self) -> Result<PhysicalPosition<f64>> {
         Ok(PhysicalPosition::default())
     }
