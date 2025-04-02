@@ -1,10 +1,20 @@
 # Tauri Runtime Verso
 
-Use [Verso](https://github.com/versotile-org/verso) as the backend for Tauri
+A tauri runtime to replace the backend with [Verso](https://github.com/versotile-org/verso)
 
 > Currently still working in progress
 
 ## Usage
+
+To get started, you need to add this crate to your project, and use `default-feature = false` on `tauri` to disable the `wry` feature
+
+```diff
+- tauri = { version = "2", features = [] }
++ tauri = { version = "2", default-features = false, features = ["common-controls-v6"] }
++ tauri-runtime-verso = { git = "https://github.com/versotile-org/tauri-runtime-verso.git" }
+```
+
+And then setup the code like this:
 
 ```rust
 use tauri_runtime_verso::{
@@ -19,6 +29,7 @@ fn main() {
     // this is optional but recommended, this directory will include very important things
     // like user agent stylesheet
     set_verso_resource_directory("../verso/resources");
+    // Set `tauri::Builder`'s generic to `VersoRuntime`
     tauri::Builder::<VersoRuntime>::new()
         // Make sure to do this or some of the commands will not work
         .invoke_system(INVOKE_SYSTEM_SCRIPTS.to_owned())
