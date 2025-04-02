@@ -162,7 +162,6 @@ struct Window {
     label: String,
     webview: Arc<Mutex<VersoviewController>>,
     on_window_event_listeners: WindowEventListeners,
-    temp_dir: tempfile::TempDir,
 }
 
 #[derive(Clone)]
@@ -222,16 +221,10 @@ impl<T: UserEvent> RuntimeContext<T> {
         let window_id = self.next_window_id();
         let webview_id = self.next_webview_id();
 
-        // TODO: Remove this after https://github.com/servo/servo/pull/35388
-        let temp_dir = initialization_scripts_to_files(
-            pending_webview.webview_attributes.initialization_scripts,
-        )
-        .map_err(|_| tauri_runtime::Error::CreateWindow)?;
-
         let webview = pending
             .window_builder
             .verso_builder
-            .userscripts_directory(temp_dir.path().to_string_lossy())
+            .user_scripts(pending_webview.webview_attributes.initialization_scripts)
             .build(get_verso_path(), Url::parse(&pending_webview.url).unwrap());
 
         let webview_label = label.clone();
@@ -284,10 +277,6 @@ impl<T: UserEvent> RuntimeContext<T> {
                 response_fn(None);
             })
             .map_err(|_| tauri_runtime::Error::CreateWindow)?;
-        // for init_script in pending_webview.webview_attributes.initialization_scripts {
-        //     webview.add_init_script(init_script);
-        // }
-        // webview.add_init_script("console.log('1')".to_owned());
 
         if let Some(navigation_handler) = pending_webview.navigation_handler {
             if let Err(error) = webview.on_navigation_starting(move |url| navigation_handler(&url))
@@ -312,7 +301,6 @@ impl<T: UserEvent> RuntimeContext<T> {
             label: label.clone(),
             webview: webview.clone(),
             on_window_event_listeners: on_window_event_listeners.clone(),
-            temp_dir,
         };
 
         self.windows.lock().unwrap().insert(window_id, window);
@@ -1636,32 +1624,4 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
     fn cursor_position(&self) -> Result<PhysicalPosition<f64>> {
         Ok(PhysicalPosition::default())
     }
-}
-
-fn initialization_scripts_to_files(
-    initialization_scripts: Vec<String>,
-) -> io::Result<tempfile::TempDir> {
-    let temp_dir = tempfile::env::temp_dir().join("versoview-servo-userscripts");
-    // if let Ok(entries) = fs::read_dir(&temp_dir) {
-    //     for entry in entries {
-    //         let _ = fs::remove_dir_all(entry?.path());
-    //     }
-    // }
-    fs::create_dir_all(&temp_dir)?;
-    let temp_dir_for_this_instance = tempfile::tempdir_in(&temp_dir)?;
-    let mut x = 1;
-    for init_script in initialization_scripts {
-        fs::write(
-            temp_dir_for_this_instance.path().join(format!("{x}.js")),
-            init_script,
-        )?;
-        x += 1;
-    }
-    Ok(temp_dir_for_this_instance)
-}
-
-/// Clean up temporary initialization scripts folder
-pub fn cleanup_initialization_scripts_folder() -> io::Result<()> {
-    let temp_dir = tempfile::env::temp_dir().join("versoview-servo-userscripts");
-    fs::remove_dir(temp_dir)
 }
