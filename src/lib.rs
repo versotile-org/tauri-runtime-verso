@@ -963,12 +963,12 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn scale_factor(&self) -> Result<f64> {
-        Ok(self
+        self
             .webview
             .lock()
             .unwrap()
             .get_scale_factor()
-            .map_err(|_| Error::FailedToSendMessage)?)
+            .map_err(|_| Error::FailedToSendMessage)
     }
 
     /// Always return `PhysicalPosition { x: 0, y: 0 }` on Wayland
@@ -994,48 +994,48 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn inner_size(&self) -> Result<PhysicalSize<u32>> {
-        Ok(self
+        self
             .webview
             .lock()
             .unwrap()
             .get_size()
-            .map_err(|_| Error::FailedToSendMessage)?)
+            .map_err(|_| Error::FailedToSendMessage)
     }
 
     fn outer_size(&self) -> Result<PhysicalSize<u32>> {
-        Ok(self
+        self
             .webview
             .lock()
             .unwrap()
             .get_size()
-            .map_err(|_| Error::FailedToSendMessage)?)
+            .map_err(|_| Error::FailedToSendMessage)
     }
 
     fn is_fullscreen(&self) -> Result<bool> {
-        Ok(self
+        self
             .webview
             .lock()
             .unwrap()
             .is_fullscreen()
-            .map_err(|_| Error::FailedToSendMessage)?)
+            .map_err(|_| Error::FailedToSendMessage)
     }
 
     fn is_minimized(&self) -> Result<bool> {
-        Ok(self
+        self
             .webview
             .lock()
             .unwrap()
             .is_minimized()
-            .map_err(|_| Error::FailedToSendMessage)?)
+            .map_err(|_| Error::FailedToSendMessage)
     }
 
     fn is_maximized(&self) -> Result<bool> {
-        Ok(self
+        self
             .webview
             .lock()
             .unwrap()
             .is_maximized()
-            .map_err(|_| Error::FailedToSendMessage)?)
+            .map_err(|_| Error::FailedToSendMessage)
     }
 
     /// Unsupported, always returns false
@@ -1069,12 +1069,12 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn is_visible(&self) -> Result<bool> {
-        Ok(self
+        self
             .webview
             .lock()
             .unwrap()
             .is_visible()
-            .map_err(|_| Error::FailedToSendMessage)?)
+            .map_err(|_| Error::FailedToSendMessage)
     }
 
     /// Unsupported, always returns empty string
