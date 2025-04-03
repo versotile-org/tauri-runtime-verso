@@ -791,23 +791,21 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher<T> {
     }
 
     fn eval_script<S: Into<String>>(&self, script: S) -> Result<()> {
-        // TODO: Find a good enum value to map and propagate the error
         self.webview
             .lock()
             .unwrap()
             .execute_script(script.into())
-            .unwrap();
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
     fn url(&self) -> Result<String> {
-        // TODO: Find a good enum value to map and propagate the error
         Ok(self
             .webview
             .lock()
             .unwrap()
             .get_current_url()
-            .unwrap()
+            .map_err(|_| Error::FailedToSendMessage)?
             .to_string())
     }
 
@@ -823,14 +821,21 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher<T> {
     }
 
     fn size(&self) -> Result<PhysicalSize<u32>> {
-        // TODO: Find a good enum value to map and propagate the error
-        let size = self.webview.lock().unwrap().get_size().unwrap();
+        let size = self
+            .webview
+            .lock()
+            .unwrap()
+            .get_size()
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(size)
     }
 
     fn navigate(&self, url: Url) -> Result<()> {
-        // TODO: Find a good enum value to map and propagate the error
-        self.webview.lock().unwrap().navigate(url).unwrap();
+        self.webview
+            .lock()
+            .unwrap()
+            .navigate(url)
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
@@ -958,57 +963,79 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn scale_factor(&self) -> Result<f64> {
-        // TODO: Find a good enum value to map and propagate the error
-        Ok(self.webview.lock().unwrap().get_scale_factor().unwrap())
+        Ok(self
+            .webview
+            .lock()
+            .unwrap()
+            .get_scale_factor()
+            .map_err(|_| Error::FailedToSendMessage)?)
     }
 
     /// Always return `PhysicalPosition { x: 0, y: 0 }` on Wayland
     fn inner_position(&self) -> Result<PhysicalPosition<i32>> {
-        // TODO: Find a good enum value to map and propagate the error
         Ok(self
             .webview
             .lock()
             .unwrap()
             .get_position()
-            .unwrap()
+            .map_err(|_| Error::FailedToSendMessage)?
             .unwrap_or_default())
     }
 
     /// Always return `PhysicalPosition { x: 0, y: 0 }` on Wayland
     fn outer_position(&self) -> Result<PhysicalPosition<i32>> {
-        // TODO: Find a good enum value to map and propagate the error
         Ok(self
             .webview
             .lock()
             .unwrap()
             .get_position()
-            .unwrap()
+            .map_err(|_| Error::FailedToSendMessage)?
             .unwrap_or_default())
     }
 
     fn inner_size(&self) -> Result<PhysicalSize<u32>> {
-        // TODO: Find a good enum value to map and propagate the error
-        Ok(self.webview.lock().unwrap().get_size().unwrap())
+        Ok(self
+            .webview
+            .lock()
+            .unwrap()
+            .get_size()
+            .map_err(|_| Error::FailedToSendMessage)?)
     }
 
     fn outer_size(&self) -> Result<PhysicalSize<u32>> {
-        // TODO: Find a good enum value to map and propagate the error
-        Ok(self.webview.lock().unwrap().get_size().unwrap())
+        Ok(self
+            .webview
+            .lock()
+            .unwrap()
+            .get_size()
+            .map_err(|_| Error::FailedToSendMessage)?)
     }
 
     fn is_fullscreen(&self) -> Result<bool> {
-        // TODO: Find a good enum value to map and propagate the error
-        Ok(self.webview.lock().unwrap().is_fullscreen().unwrap())
+        Ok(self
+            .webview
+            .lock()
+            .unwrap()
+            .is_fullscreen()
+            .map_err(|_| Error::FailedToSendMessage)?)
     }
 
     fn is_minimized(&self) -> Result<bool> {
-        // TODO: Find a good enum value to map and propagate the error
-        Ok(self.webview.lock().unwrap().is_minimized().unwrap())
+        Ok(self
+            .webview
+            .lock()
+            .unwrap()
+            .is_minimized()
+            .map_err(|_| Error::FailedToSendMessage)?)
     }
 
     fn is_maximized(&self) -> Result<bool> {
-        // TODO: Find a good enum value to map and propagate the error
-        Ok(self.webview.lock().unwrap().is_maximized().unwrap())
+        Ok(self
+            .webview
+            .lock()
+            .unwrap()
+            .is_maximized()
+            .map_err(|_| Error::FailedToSendMessage)?)
     }
 
     /// Unsupported, always returns false
@@ -1042,8 +1069,12 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn is_visible(&self) -> Result<bool> {
-        // TODO: Find a good enum value to map and propagate the error
-        Ok(self.webview.lock().unwrap().is_visible().unwrap())
+        Ok(self
+            .webview
+            .lock()
+            .unwrap()
+            .is_visible()
+            .map_err(|_| Error::FailedToSendMessage)?)
     }
 
     /// Unsupported, always returns empty string
@@ -1156,38 +1187,56 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn maximize(&self) -> Result<()> {
-        // TODO: Find a good enum value to map and propagate the error
-        self.webview.lock().unwrap().set_maximized(true).unwrap();
+        self.webview
+            .lock()
+            .unwrap()
+            .set_maximized(true)
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
     fn unmaximize(&self) -> Result<()> {
-        // TODO: Find a good enum value to map and propagate the error
-        self.webview.lock().unwrap().set_maximized(false).unwrap();
+        self.webview
+            .lock()
+            .unwrap()
+            .set_maximized(false)
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
     fn minimize(&self) -> Result<()> {
-        // TODO: Find a good enum value to map and propagate the error
-        self.webview.lock().unwrap().set_minimized(true).unwrap();
+        self.webview
+            .lock()
+            .unwrap()
+            .set_minimized(true)
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
     fn unminimize(&self) -> Result<()> {
-        // TODO: Find a good enum value to map and propagate the error
-        self.webview.lock().unwrap().set_minimized(false).unwrap();
+        self.webview
+            .lock()
+            .unwrap()
+            .set_minimized(false)
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
     fn show(&self) -> Result<()> {
-        // TODO: Find a good enum value to map and propagate the error
-        self.webview.lock().unwrap().set_visible(true).unwrap();
+        self.webview
+            .lock()
+            .unwrap()
+            .set_visible(true)
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
     fn hide(&self) -> Result<()> {
-        // TODO: Find a good enum value to map and propagate the error
-        self.webview.lock().unwrap().set_visible(false).unwrap();
+        self.webview
+            .lock()
+            .unwrap()
+            .set_visible(false)
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
@@ -1232,8 +1281,11 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn set_size(&self, size: Size) -> Result<()> {
-        // TODO: Find a good enum value to map and propagate the error
-        self.webview.lock().unwrap().set_size(size).unwrap();
+        self.webview
+            .lock()
+            .unwrap()
+            .set_size(size)
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
@@ -1248,18 +1300,20 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn set_position(&self, position: Position) -> Result<()> {
-        // TODO: Find a good enum value to map and propagate the error
-        self.webview.lock().unwrap().set_position(position).unwrap();
+        self.webview
+            .lock()
+            .unwrap()
+            .set_position(position)
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
     fn set_fullscreen(&self, fullscreen: bool) -> Result<()> {
-        // TODO: Find a good enum value to map and propagate the error
         self.webview
             .lock()
             .unwrap()
             .set_fullscreen(fullscreen)
-            .unwrap();
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
@@ -1304,8 +1358,11 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn start_dragging(&self) -> Result<()> {
-        // TODO: Find a good enum value to map and propagate the error
-        self.webview.lock().unwrap().start_dragging().unwrap();
+        self.webview
+            .lock()
+            .unwrap()
+            .start_dragging()
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
