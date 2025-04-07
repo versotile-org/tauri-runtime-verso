@@ -522,6 +522,10 @@ impl Default for VersoWindowBuilder {
         if let Some(devtools_port) = get_verso_devtools_port() {
             verso_builder = verso_builder.devtools_port(devtools_port);
         }
+        // Default `decorated` to `true` to align with the wry runtime
+        verso_builder = verso_builder.decorated(true);
+        // Default `transparent` to `false` to align with the wry runtime
+        verso_builder = verso_builder.transparent(false);
         Self { verso_builder }
     }
 }
@@ -541,7 +545,10 @@ impl WindowBuilder for VersoWindowBuilder {
             .fullscreen(config.fullscreen)
             .maximized(config.maximized)
             .visible(config.visible)
-            .inner_size(LogicalSize::new(config.width, config.height));
+            .inner_size(LogicalSize::new(config.width, config.height))
+            .title(config.title.clone())
+            .decorated(config.decorations)
+            .transparent(config.transparent);
 
         if let (Some(x), Some(y)) = (config.x, config.y) {
             verso_builder = verso_builder.position(LogicalPosition::new(x, y));
@@ -607,8 +614,8 @@ impl WindowBuilder for VersoWindowBuilder {
         self
     }
 
-    /// Unsupported, has no effect
-    fn title<S: Into<String>>(self, title: S) -> Self {
+    fn title<S: Into<String>>(mut self, title: S) -> Self {
+        self.verso_builder = self.verso_builder.title(title);
         self
     }
 
@@ -632,8 +639,8 @@ impl WindowBuilder for VersoWindowBuilder {
         self
     }
 
-    /// Unsupported, has no effect
-    fn decorations(self, decorations: bool) -> Self {
+    fn decorations(mut self, decorations: bool) -> Self {
+        self.verso_builder = self.verso_builder.decorated(decorations);
         self
     }
 
@@ -757,13 +764,13 @@ impl WindowBuilder for VersoWindowBuilder {
         self
     }
 
-    /// Unsupported, has no effect
     #[cfg(any(not(target_os = "macos"), feature = "macos-private-api"))]
     #[cfg_attr(
         docsrs,
         doc(cfg(any(not(target_os = "macos"), feature = "macos-private-api")))
     )]
-    fn transparent(self, transparent: bool) -> Self {
+    fn transparent(mut self, transparent: bool) -> Self {
+        self.verso_builder = self.verso_builder.transparent(transparent);
         self
     }
 }
@@ -963,8 +970,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn scale_factor(&self) -> Result<f64> {
-        self
-            .webview
+        self.webview
             .lock()
             .unwrap()
             .get_scale_factor()
@@ -994,8 +1000,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn inner_size(&self) -> Result<PhysicalSize<u32>> {
-        self
-            .webview
+        self.webview
             .lock()
             .unwrap()
             .get_size()
@@ -1003,8 +1008,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn outer_size(&self) -> Result<PhysicalSize<u32>> {
-        self
-            .webview
+        self.webview
             .lock()
             .unwrap()
             .get_size()
@@ -1012,8 +1016,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn is_fullscreen(&self) -> Result<bool> {
-        self
-            .webview
+        self.webview
             .lock()
             .unwrap()
             .is_fullscreen()
@@ -1021,8 +1024,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn is_minimized(&self) -> Result<bool> {
-        self
-            .webview
+        self.webview
             .lock()
             .unwrap()
             .is_minimized()
@@ -1030,8 +1032,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn is_maximized(&self) -> Result<bool> {
-        self
-            .webview
+        self.webview
             .lock()
             .unwrap()
             .is_maximized()
@@ -1069,8 +1070,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn is_visible(&self) -> Result<bool> {
-        self
-            .webview
+        self.webview
             .lock()
             .unwrap()
             .is_visible()

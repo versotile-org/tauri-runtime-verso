@@ -32,6 +32,7 @@ fn main() {
 
             WebviewWindowBuilder::new(app, "main", Default::default())
                 .inner_size(900., 700.)
+                .decorations(false)
                 .build()?;
 
             Ok(())
