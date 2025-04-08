@@ -52,14 +52,13 @@ use windows::Win32::Foundation::HWND;
 use std::{
     collections::HashMap,
     fmt::{self, Debug},
-    fs,
-    io::{self},
     path::{Path, PathBuf},
     sync::{
         Arc, Mutex, OnceLock,
         atomic::{AtomicU32, Ordering},
         mpsc::{Receiver, SyncSender, channel, sync_channel},
     },
+    thread::{ThreadId, current as current_thread},
 };
 
 static VERSO_PATH: OnceLock<PathBuf> = OnceLock::new();
@@ -168,6 +167,7 @@ struct Window {
 pub struct RuntimeContext<T> {
     windows: Arc<Mutex<HashMap<WindowId, Window>>>,
     run_tx: SyncSender<Message<T>>,
+    main_thread_id: ThreadId,
     next_window_id: Arc<AtomicU32>,
     next_webview_id: Arc<AtomicU32>,
     next_window_event_id: Arc<AtomicU32>,
@@ -176,9 +176,16 @@ pub struct RuntimeContext<T> {
 
 impl<T: UserEvent> RuntimeContext<T> {
     fn send_message(&self, message: Message<T>) -> Result<()> {
+        if current_thread().id() == self.main_thread_id {
+            if let Message::Task(task) = message {
+                task();
+                return Ok(());
+            }
+        }
         self.run_tx
             .send(message)
-            .map_err(|_| Error::FailedToSendMessage)
+            .map_err(|_| Error::FailedToSendMessage)?;
+        Ok(())
     }
 
     fn next_window_id(&self) -> WindowId {
@@ -1469,6 +1476,7 @@ impl<T: UserEvent> VersoRuntime<T> {
         let context = RuntimeContext {
             windows: Default::default(),
             run_tx: tx,
+            main_thread_id: current_thread().id(),
             next_window_id: Default::default(),
             next_webview_id: Default::default(),
             next_window_event_id: Default::default(),
