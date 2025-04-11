@@ -4008,6 +4008,7 @@ dependencies = [
  "gtk",
  "http",
  "log",
+ "percent-encoding",
  "raw-window-handle",
  "tauri",
  "tauri-runtime",

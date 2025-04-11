@@ -60,6 +60,9 @@
 
 		if (!customProtocolIpcFailed) {
 			const { contentType, data } = processIpcMessage(payload)
+			// Headers can only contain ascii characters, so encoding is needed,
+			// and since tauri already depends on percent-encoding rust crate, we use `encodeURI` here for that reason
+			const invokeBody = encodeURI(data)
 			fetch(window.__TAURI_INTERNALS__.convertFileSrc(cmd, 'ipc'), {
 				method: 'POST',
 				// body: data,
@@ -68,7 +71,7 @@
 					'Tauri-Callback': callback,
 					'Tauri-Error': error,
 					'Tauri-Invoke-Key': __TAURI_INVOKE_KEY__,
-					'Tauri-VersoRuntime-Invoke-Body': data,
+					'Tauri-VersoRuntime-Invoke-Body': invokeBody,
 					...((options && options.headers) || {}),
 				},
 			})

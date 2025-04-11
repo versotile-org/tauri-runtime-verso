@@ -255,7 +255,13 @@ impl<T: UserEvent> RuntimeContext<T> {
                             .headers_mut()
                             .remove("Tauri-VersoRuntime-Invoke-Body")
                         {
-                            *request.request.body_mut() = data.as_bytes().to_vec();
+                            if let Ok(body) =
+                                percent_encoding::percent_decode(data.as_bytes()).decode_utf8()
+                            {
+                                *request.request.body_mut() = body.as_bytes().to_vec();
+                            } else {
+                                log::error!("IPC invoke body header is not a valid UTF-8 string");
+                            }
                         }
                     }
                     #[cfg(windows)]
