@@ -12,6 +12,19 @@
 //!     tauri_build::build();
 //! }
 //! ```
+//!
+//! and in your tauri config file (`tauri.conf.json`), add the following
+//!
+//! ```json
+//! {
+//!   "bundle": {
+//!     "externalBin": [
+//!       "versoview/versoview"
+//!     ]
+//!   }
+//! }
+//! ```
+//!
 
 use std::{io, path::PathBuf};
 
@@ -24,13 +37,19 @@ pub fn get_verso_as_external_bin() -> io::Result<()> {
     let project_directory = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let output_directory = PathBuf::from(project_directory).join("versoview");
 
+    let ext = if cfg!(windows) { ".exe" } else { "" };
+    let output_executable = output_directory.join(format!("versoview-{target_triple}{ext}"));
+
+    if std::fs::exists(&output_executable)? {
+        return Ok(());
+    }
+
     versoview_build::download_and_extract_verso(&output_directory)?;
 
-    let ext = if cfg!(windows) { ".exe" } else { "" };
-    std::fs::rename(
-        output_directory.join(format!("versoview{ext}")),
-        output_directory.join(format!("versoview-{target_triple}{ext}")),
-    )?;
+    let extracted_versoview_path = output_directory.join(format!("versoview{ext}"));
+    std::fs::rename(extracted_versoview_path, &output_executable)?;
+
+    println!("cargo:rerun-if-changed={}", output_executable.display());
 
     Ok(())
 }
