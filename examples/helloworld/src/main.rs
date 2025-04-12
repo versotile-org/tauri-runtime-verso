@@ -2,7 +2,10 @@
 
 use tauri::Manager;
 use tauri_runtime_verso::{
-    INVOKE_SYSTEM_SCRIPTS, VersoRuntime, set_verso_path, set_verso_resource_directory,
+    INVOKE_SYSTEM_SCRIPTS,
+    VersoRuntime,
+    // set_verso_path,
+    set_verso_resource_directory,
 };
 
 #[tauri::command]
@@ -13,7 +16,7 @@ fn greet(name: &str) -> String {
 fn main() {
     // You need to set this to the path of the versoview executable
     // before creating any of the webview windows
-    set_verso_path("../verso/target/debug/versoview");
+    // set_verso_path("../verso/target/debug/versoview");
     // Set this to verso/servo's resources directory before creating any of the webview windows
     // this is optional but recommended, this directory will include very important things
     // like user agent stylesheet

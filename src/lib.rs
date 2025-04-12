@@ -92,14 +92,13 @@ fn get_verso_path() -> &'static Path {
 }
 
 fn side_car_path() -> Option<PathBuf> {
-    Some(
-        current_exe()
-            .ok()?
-            .parent()?
-            .join("versoview")
-            .canonicalize()
-            .ok()?,
-    )
+    let extension = if cfg!(windows) { ".exe" } else { "" };
+    current_exe()
+        .ok()?
+        .parent()?
+        .join(format!("versoview{extension}"))
+        .canonicalize()
+        .ok()
 }
 
 static VERSO_RESOURCES_DIRECTORY: Mutex<Option<PathBuf>> = Mutex::new(None);
