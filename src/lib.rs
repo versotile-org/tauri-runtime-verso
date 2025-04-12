@@ -65,7 +65,7 @@ use std::{
 static VERSO_PATH: OnceLock<PathBuf> = OnceLock::new();
 
 /// Sets the Verso executable path to ues for the webviews,
-/// much be called before you create any webviews if you don't have the `externalBin` setup
+/// must be called before you create any webviews if you don't have the `externalBin` setup
 ///
 /// ### Example:
 ///
