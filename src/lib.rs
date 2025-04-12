@@ -51,6 +51,7 @@ use windows::Win32::Foundation::HWND;
 
 use std::{
     collections::HashMap,
+    env::current_exe,
     fmt::{self, Debug},
     path::{Path, PathBuf},
     sync::{
@@ -64,7 +65,7 @@ use std::{
 static VERSO_PATH: OnceLock<PathBuf> = OnceLock::new();
 
 /// Sets the Verso executable path to ues for the webviews,
-/// much be called before you create any webviews
+/// much be called before you create any webviews if you don't have the `externalBin` setup
 ///
 /// ### Example:
 ///
@@ -83,9 +84,22 @@ pub fn set_verso_path(path: impl Into<PathBuf>) {
 }
 
 fn get_verso_path() -> &'static Path {
-    VERSO_PATH
-        .get()
-        .expect("Verso path not set! You need to call set_verso_path before creating any webviews!")
+    VERSO_PATH.get_or_init(|| {
+        side_car_path().expect(
+            "Verso path not set! You need to call set_verso_path before creating any webviews!",
+        )
+    })
+}
+
+fn side_car_path() -> Option<PathBuf> {
+    Some(
+        current_exe()
+            .ok()?
+            .parent()?
+            .join("versoview")
+            .canonicalize()
+            .ok()?,
+    )
 }
 
 static VERSO_RESOURCES_DIRECTORY: Mutex<Option<PathBuf>> = Mutex::new(None);
