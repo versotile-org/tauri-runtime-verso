@@ -85,18 +85,18 @@ pub fn set_verso_path(path: impl Into<PathBuf>) {
 
 fn get_verso_path() -> &'static Path {
     VERSO_PATH.get_or_init(|| {
-        side_car_path().expect(
+        relative_command_path("versoview").expect(
             "Verso path not set! You need to call set_verso_path before creating any webviews!",
         )
     })
 }
 
-fn side_car_path() -> Option<PathBuf> {
+fn relative_command_path(name: &str) -> Option<PathBuf> {
     let extension = if cfg!(windows) { ".exe" } else { "" };
     current_exe()
         .ok()?
         .parent()?
-        .join(format!("versoview{extension}"))
+        .join(format!("{name}{extension}"))
         .canonicalize()
         .ok()
 }
