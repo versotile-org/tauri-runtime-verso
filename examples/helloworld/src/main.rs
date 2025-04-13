@@ -1,12 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use tauri::Manager;
-use tauri_runtime_verso::{
-    INVOKE_SYSTEM_SCRIPTS,
-    VersoRuntime,
-    // set_verso_path,
-    set_verso_resource_directory,
-};
+use tauri_runtime_verso::{INVOKE_SYSTEM_SCRIPTS, VersoRuntime, set_verso_resource_directory};
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -14,13 +9,11 @@ fn greet(name: &str) -> String {
 }
 
 fn main() {
-    // You need to set this to the path of the versoview executable
-    // before creating any of the webview windows
-    // set_verso_path("../verso/target/debug/versoview");
     // Set this to verso/servo's resources directory before creating any of the webview windows
     // this is optional but recommended, this directory will include very important things
     // like user agent stylesheet
     set_verso_resource_directory("../verso/resources");
+    // Set `tauri::Builder`'s generic to `VersoRuntime`
     tauri::Builder::<VersoRuntime>::new()
         .invoke_handler(tauri::generate_handler![greet])
         .setup(|app| {
