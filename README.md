@@ -28,7 +28,7 @@ fn main() {
 }
 ```
 
-Then add the downloaded executable to your tauri config file (`tauri.conf.json`)
+Then add the downloaded executable to your tauri config file (`tauri.conf.json`) as an external binary file
 
 ```diff
   {

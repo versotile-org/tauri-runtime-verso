@@ -86,6 +86,7 @@ dependencies = [
  "tauri-plugin-log",
  "tauri-plugin-opener",
  "tauri-runtime-verso",
+ "tauri-runtime-verso-build",
 ]
 
 [[package]]
