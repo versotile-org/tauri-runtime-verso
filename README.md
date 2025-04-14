@@ -21,6 +21,8 @@ To get started, you need to add this crate to your project, and use `default-fea
 
 In your build script, add the `tauri-runtime-verso-build` script, which will download the pre-built `versoview` to `versoview/versoview-{target-triple}`
 
+> Note we currently only have pre-built `versoview` for x64 Linux, Windows, MacOS and arm64 MacOS
+
 ```diff
 fn main() {
 +   tauri_runtime_verso_build::get_verso_as_external_bin().unwrap();
@@ -58,3 +60,9 @@ fn main() {
 For more, take a look at the [hello world example](examples/helloworld), or a more sophisticated [api example](examples/api) show casing how you can use [`react`](https://react.dev/) in it and how to bundle the versoview executable and resource directory with `tauri-cli`'s bundler feature so you can actually easily distribute your app
 
 Also, you can checkout the [documentation](https://versotile-org.github.io/tauri-runtime-verso/tauri_runtime_verso)
+
+### Common Problems
+
+#### No such file or directory on Linux
+
+This error means either the path you set through `set_verso_path` is wrong (this should not be a problem if you're using the `externalBin` setup from the [Usage](#usage)) or the `versoview` exectuable requires a more recent version of glibc that your system doesn't have, in this case, you'll need to either update your linux distro or build `versoview` yourself
