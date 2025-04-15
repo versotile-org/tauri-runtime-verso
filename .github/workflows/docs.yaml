@@ -32,7 +32,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Build
-        run: cargo doc --no-deps
+        run: cargo doc --package tauri-runtime-verso --package tauri-runtime-verso-build --no-deps
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
