@@ -55,6 +55,20 @@
 //! }
 //! ```
 //!
+//! ## Tips
+//!
+//! ### Devtools
+//!
+//! Since Verso doesn't have a devtools built-in, you'll need to use the one from the Firefox, first put in this in your code
+//!
+//! ```rust
+//! // This will make the webviews created afters this open up a devtools server on this port,
+//! // setting it to 0 for a random port
+//! tauri_runtime_verso::set_verso_devtools_port(1234);
+//! ```
+//!
+//! Then go to `about:debugging` in Firefox and connect to `localhost:1234` there
+//!
 //! ## Cargo features
 //!
 //! - **macos-private-api**: Matching with Tauri's macos-private-api feature, required if you use that
@@ -177,10 +191,11 @@ pub const INVOKE_SYSTEM_SCRIPTS: &str = include_str!("./invoke-system-initializa
 
 static DEV_TOOLS_PORT: Mutex<Option<u16>> = Mutex::new(None);
 
-/// Sets the Verso devtools port to ues for the webviews, note this only affects webviews created after you set this
+/// Sets the Verso devtools port to ues for the webviews, 0 for random port,
+/// note this only affects webviews created after you set this
 ///
 /// Since Verso doesn't have devtools built-in,
-/// you need to use the one from Firefox,
+/// you need to use the one from Firefox from the `about:debugging` page,
 /// this setting allows you to let verso open a port for it
 pub fn set_verso_devtools_port(port: u16) {
     DEV_TOOLS_PORT.lock().unwrap().replace(port);

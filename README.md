@@ -66,3 +66,17 @@ Also, you can checkout the [documentation](https://versotile-org.github.io/tauri
 #### No such file or directory on Linux
 
 This error means either the path you set through `set_verso_path` is wrong (this should not be a problem if you're using the `externalBin` setup from the [Usage](#usage)) or the `versoview` exectuable requires a more recent version of glibc that your system doesn't have, in this case, you'll need to either update your linux distro or build `versoview` yourself
+
+## Tips
+
+### Devtools
+
+Since Verso doesn't have a devtools built-in, you'll need to use the one from the Firefox, first put in this in your code
+
+```rust
+// This will make the webviews created afters this open up a devtools server on this port,
+// setting it to 0 for a random port
+tauri_runtime_verso::set_verso_devtools_port(1234);
+```
+
+Then go to `about:debugging` in Firefox and connect to `localhost:1234` there
