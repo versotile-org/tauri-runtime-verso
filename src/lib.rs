@@ -4,19 +4,50 @@
 //!
 //! ## Usage
 //!
+//! To get started, you need to add this crate to your project, and use `default-feature = false` on `tauri` to disable the `wry` feature
+//!
+//! ```diff
+//!   [build-dependencies]
+//!   tauri-build = "2"
+//! + tauri-runtime-verso-build = { git = "https://github.com/versotile-org/tauri-runtime-verso.git" }
+//!
+//!   [dependencies]
+//! - tauri = { version = "2", features = [] }
+//! + tauri = { version = "2", default-features = false, features = ["common-controls-v6"] }
+//! + tauri-runtime-verso = { git = "https://github.com/versotile-org/tauri-runtime-verso.git" }
 //! ```
-//! use tauri::Manager;
-//! use tauri_runtime_verso::{set_verso_path, set_verso_resource_directory, INVOKE_SYSTEM_SCRIPTS};
+//!
+//! In your build script, add the `tauri-runtime-verso-build` script, which will download the pre-built `versoview` to `versoview/versoview-{target-triple}`
+//!
+//! > Note we currently only have pre-built `versoview` for x64 Linux, Windows, MacOS and arm64 MacOS, also the download might take a bit of time if you have a slow internet connection
+//!
+//! ```diff
+//! fn main() {
+//! +   tauri_runtime_verso_build::get_verso_as_external_bin().unwrap();
+//!     tauri_build::build();
+//! }
+//! ```
+//!
+//! Then add the downloaded executable to your tauri config file (`tauri.conf.json`) as an external binary file
+//!
+//! ```diff
+//!   {
+//! +   "bundle": {
+//! +     "externalBin": [
+//! +       "versoview/versoview"
+//! +     ]
+//! +   }
+//!   }
+//! ```
+//!
+//! Finally, setup the code like this:
+//!
+//! ```rust
+//! use tauri_runtime_verso::{INVOKE_SYSTEM_SCRIPTS, VersoRuntime};
 //!
 //! fn main() {
-//!     // You need to set this to the path of the versoview executable
-//!     // before creating any of the webview windows
-//!     set_verso_path("../verso/target/debug/versoview");
-//!     // Set this to verso/servo's resources directory before creating any of the webview windows
-//!     // this is optional but recommended, this directory will include very important things
-//!     // like user agent stylesheet
-//!     set_verso_resource_directory("../verso/resources");
-//!     tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
+//!     // Set `tauri::Builder`'s generic to `VersoRuntime`
+//!     tauri::Builder::<VersoRuntime>::new()
 //!         // Make sure to do this or some of the commands will not work
 //!         .invoke_system(INVOKE_SYSTEM_SCRIPTS.to_owned())
 //!         .run(tauri::generate_context!())
@@ -51,6 +82,7 @@ use windows::Win32::Foundation::HWND;
 
 use std::{
     collections::HashMap,
+    env::current_exe,
     fmt::{self, Debug},
     path::{Path, PathBuf},
     sync::{
@@ -64,7 +96,7 @@ use std::{
 static VERSO_PATH: OnceLock<PathBuf> = OnceLock::new();
 
 /// Sets the Verso executable path to ues for the webviews,
-/// much be called before you create any webviews
+/// must be called before you create any webviews if you don't have the `externalBin` setup
 ///
 /// ### Example:
 ///
@@ -83,9 +115,21 @@ pub fn set_verso_path(path: impl Into<PathBuf>) {
 }
 
 fn get_verso_path() -> &'static Path {
-    VERSO_PATH
-        .get()
-        .expect("Verso path not set! You need to call set_verso_path before creating any webviews!")
+    VERSO_PATH.get_or_init(|| {
+        relative_command_path("versoview").expect(
+            "Verso path not set! You need to call set_verso_path before creating any webviews!",
+        )
+    })
+}
+
+fn relative_command_path(name: &str) -> Option<PathBuf> {
+    let extension = if cfg!(windows) { ".exe" } else { "" };
+    current_exe()
+        .ok()?
+        .parent()?
+        .join(format!("{name}{extension}"))
+        .canonicalize()
+        .ok()
 }
 
 static VERSO_RESOURCES_DIRECTORY: Mutex<Option<PathBuf>> = Mutex::new(None);

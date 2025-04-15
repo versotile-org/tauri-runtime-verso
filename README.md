@@ -9,26 +9,45 @@ A tauri runtime to replace the backend with [Verso](https://github.com/versotile
 To get started, you need to add this crate to your project, and use `default-feature = false` on `tauri` to disable the `wry` feature
 
 ```diff
+  [build-dependencies]
+  tauri-build = "2"
++ tauri-runtime-verso-build = { git = "https://github.com/versotile-org/tauri-runtime-verso.git" }
+
+  [dependencies]
 - tauri = { version = "2", features = [] }
 + tauri = { version = "2", default-features = false, features = ["common-controls-v6"] }
 + tauri-runtime-verso = { git = "https://github.com/versotile-org/tauri-runtime-verso.git" }
 ```
 
-And then setup the code like this:
+In your build script, add the `tauri-runtime-verso-build` script, which will download the pre-built `versoview` to `versoview/versoview-{target-triple}`
+
+> Note we currently only have pre-built `versoview` for x64 Linux, Windows, MacOS and arm64 MacOS, also the download might take a bit of time if you have a slow internet connection
+
+```diff
+fn main() {
++   tauri_runtime_verso_build::get_verso_as_external_bin().unwrap();
+    tauri_build::build();
+}
+```
+
+Then add the downloaded executable to your tauri config file (`tauri.conf.json`) as an external binary file
+
+```diff
+  {
++   "bundle": {
++     "externalBin": [
++       "versoview/versoview"
++     ]
++   }
+  }
+```
+
+Finally, setup the code like this:
 
 ```rust
-use tauri_runtime_verso::{
-    INVOKE_SYSTEM_SCRIPTS, VersoRuntime, set_verso_path, set_verso_resource_directory,
-};
+use tauri_runtime_verso::{INVOKE_SYSTEM_SCRIPTS, VersoRuntime};
 
 fn main() {
-    // You need to set this to the path of the versoview executable
-    // before creating any of the webview windows
-    set_verso_path("../verso/target/debug/versoview");
-    // Set this to verso/servo's resources directory before creating any of the webview windows
-    // this is optional but recommended, this directory will include very important things
-    // like user agent stylesheet
-    set_verso_resource_directory("../verso/resources");
     // Set `tauri::Builder`'s generic to `VersoRuntime`
     tauri::Builder::<VersoRuntime>::new()
         // Make sure to do this or some of the commands will not work
@@ -41,3 +60,9 @@ fn main() {
 For more, take a look at the [hello world example](examples/helloworld), or a more sophisticated [api example](examples/api) show casing how you can use [`react`](https://react.dev/) in it and how to bundle the versoview executable and resource directory with `tauri-cli`'s bundler feature so you can actually easily distribute your app
 
 Also, you can checkout the [documentation](https://versotile-org.github.io/tauri-runtime-verso/tauri_runtime_verso)
+
+### Common Problems
+
+#### No such file or directory on Linux
+
+This error means either the path you set through `set_verso_path` is wrong (this should not be a problem if you're using the `externalBin` setup from the [Usage](#usage)) or the `versoview` exectuable requires a more recent version of glibc that your system doesn't have, in this case, you'll need to either update your linux distro or build `versoview` yourself

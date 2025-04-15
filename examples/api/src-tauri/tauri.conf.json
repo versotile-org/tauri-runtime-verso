@@ -17,10 +17,7 @@
       "../../.icons/icon.png"
     ],
     "externalBin": [
-      "../../../../verso/target/debug/versoview"
-    ],
-    "resources": {
-      "../../../../verso/resources": "verso-resources"
-    }
+      "versoview/versoview"
+    ]
   }
 }

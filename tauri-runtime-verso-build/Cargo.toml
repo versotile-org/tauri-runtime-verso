@@ -1,0 +1,7 @@
+[package]
+name = "tauri-runtime-verso-build"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+versoview_build = { workspace = true }
