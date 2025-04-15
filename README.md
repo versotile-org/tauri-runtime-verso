@@ -21,7 +21,7 @@ To get started, you need to add this crate to your project, and use `default-fea
 
 In your build script, add the `tauri-runtime-verso-build` script, which will download the pre-built `versoview` to `versoview/versoview-{target-triple}`
 
-> Note we currently only have pre-built `versoview` for x64 Linux, Windows, MacOS and arm64 MacOS
+> Note we currently only have pre-built `versoview` for x64 Linux, Windows, MacOS and arm64 MacOS, also the download might take a bit of time if you have a slow internet connection
 
 ```diff
 fn main() {
