@@ -51,7 +51,7 @@ fn main() {
     // Set `tauri::Builder`'s generic to `VersoRuntime`
     tauri::Builder::<VersoRuntime>::new()
         // Make sure to do this or some of the commands will not work
-        .invoke_system(INVOKE_SYSTEM_SCRIPTS.to_owned())
+        .invoke_system(INVOKE_SYSTEM_SCRIPTS)
         .run(tauri::generate_context!())
         .unwrap();
 }

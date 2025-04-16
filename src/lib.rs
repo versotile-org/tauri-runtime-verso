@@ -49,7 +49,7 @@
 //!     // Set `tauri::Builder`'s generic to `VersoRuntime`
 //!     tauri::Builder::<VersoRuntime>::new()
 //!         // Make sure to do this or some of the commands will not work
-//!         .invoke_system(INVOKE_SYSTEM_SCRIPTS.to_owned())
+//!         .invoke_system(INVOKE_SYSTEM_SCRIPTS)
 //!         .run(tauri::generate_context!())
 //!         .unwrap();
 //! }
@@ -290,7 +290,13 @@ impl<T: UserEvent> RuntimeContext<T> {
         let webview = pending
             .window_builder
             .verso_builder
-            .user_scripts(pending_webview.webview_attributes.initialization_scripts)
+            .user_scripts(
+                pending_webview
+                    .webview_attributes
+                    .initialization_scripts
+                    .into_iter()
+                    .map(|script| script.script),
+            )
             .build(get_verso_path(), Url::parse(&pending_webview.url).unwrap());
 
         let webview_label = label.clone();
@@ -448,6 +454,11 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
     ) -> Result<()> {
         Ok(())
     }
+
+    /// Unsupported, has no effect
+    #[cfg(target_os = "macos")]
+    #[cfg_attr(docsrs, doc(cfg(target_os = "macos")))]
+    fn set_dock_visibility(&self, visible: bool) -> Result<()>;
 
     fn request_exit(&self, code: i32) -> Result<()> {
         self.context.send_message(Message::RequestExit(code))
@@ -843,6 +854,16 @@ impl WindowBuilder for VersoWindowBuilder {
     )]
     fn transparent(mut self, transparent: bool) -> Self {
         self.verso_builder = self.verso_builder.transparent(transparent);
+        self
+    }
+
+    /// Unsupported, has no effect
+    fn prevent_overflow(self) -> Self {
+        self
+    }
+
+    /// Unsupported, has no effect
+    fn prevent_overflow_with_margin(self, margin: tauri_runtime::dpi::Size) -> Self {
         self
     }
 }
@@ -1697,6 +1718,11 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
     #[cfg(target_os = "macos")]
     #[cfg_attr(docsrs, doc(cfg(target_os = "macos")))]
     fn hide(&self) {}
+
+    /// Unsupported, has no effect
+    #[cfg(target_os = "macos")]
+    #[cfg_attr(docsrs, doc(cfg(target_os = "macos")))]
+    fn set_dock_visibility(&self, visible: bool) -> Result<()>;
 
     /// Unsupported, has no effect when called
     fn set_device_event_filter(&mut self, filter: DeviceEventFilter) {}
