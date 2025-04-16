@@ -80,3 +80,9 @@ tauri_runtime_verso::set_verso_devtools_port(1234);
 ```
 
 Then go to `about:debugging` in Firefox and connect to `localhost:1234` there
+
+## Known limitations
+
+Currently, tray icon and menu are not supported because we don't have an actuall event loop yet
+
+For more, checkout the [documentation](https://versotile-org.github.io/tauri-runtime-verso/tauri_runtime_verso)
