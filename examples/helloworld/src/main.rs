@@ -24,7 +24,7 @@ fn main() {
             Ok(())
         })
         // Make sure to do this or some of the commands will not work
-        .invoke_system(INVOKE_SYSTEM_SCRIPTS.to_owned())
+        .invoke_system(INVOKE_SYSTEM_SCRIPTS)
         .run(tauri::generate_context!())
         .expect("error while running tauri application")
 }

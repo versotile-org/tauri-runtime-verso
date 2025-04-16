@@ -19,7 +19,7 @@ fn main() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![greet])
         // Make sure to do this or some of the commands will not work
-        .invoke_system(INVOKE_SYSTEM_SCRIPTS.to_owned())
+        .invoke_system(INVOKE_SYSTEM_SCRIPTS)
         .setup(|app| {
             WebviewWindowBuilder::new(app, "main", Default::default())
                 .inner_size(900., 700.)
