@@ -1722,7 +1722,7 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
     /// Unsupported, has no effect
     #[cfg(target_os = "macos")]
     #[cfg_attr(docsrs, doc(cfg(target_os = "macos")))]
-    fn set_dock_visibility(&mut self, visible: bool) -> Result<()> {}
+    fn set_dock_visibility(&mut self, visible: bool) {}
 
     /// Unsupported, has no effect when called
     fn set_device_event_filter(&mut self, filter: DeviceEventFilter) {}
