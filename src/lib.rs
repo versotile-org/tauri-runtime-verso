@@ -458,7 +458,9 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
     /// Unsupported, has no effect
     #[cfg(target_os = "macos")]
     #[cfg_attr(docsrs, doc(cfg(target_os = "macos")))]
-    fn set_dock_visibility(&self, visible: bool) -> Result<()> {}
+    fn set_dock_visibility(&self, visible: bool) -> Result<()> {
+        Ok(())
+    }
 
     fn request_exit(&self, code: i32) -> Result<()> {
         self.context.send_message(Message::RequestExit(code))
