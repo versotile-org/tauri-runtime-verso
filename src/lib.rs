@@ -75,6 +75,7 @@
 
 #![allow(unused)]
 
+use http::{Uri, uri::InvalidUri};
 use tauri::{LogicalPosition, LogicalSize};
 use tauri_runtime::{
     DeviceEventFilter, Error, EventLoopProxy, ExitRequestedEventAction, Icon, ProgressBarState,
@@ -330,18 +331,29 @@ impl<T: UserEvent> RuntimeContext<T> {
                         }
                     }
                     #[cfg(windows)]
-                    let is_custom_protocol_uri = is_custom_protocol_uri(
-                        &request.request.uri().to_string(),
+                    let (uri, http_or_https) = (
+                        request.request.uri().to_string(),
                         if pending_webview.webview_attributes.use_https_scheme {
                             "https"
                         } else {
                             "http"
                         },
-                        scheme,
                     );
+                    #[cfg(windows)]
+                    let is_custom_protocol_uri =
+                        is_custom_protocol_uri(&uri, http_or_https, scheme);
                     #[cfg(not(windows))]
                     let is_custom_protocol_uri = request.request.uri().scheme_str() == Some(scheme);
                     if is_custom_protocol_uri {
+                        #[cfg(windows)]
+                        {
+                            match revert_custom_protocol_work_around(&uri, http_or_https, scheme) {
+                                Ok(reverted) => *request.request.uri_mut() = reverted,
+                                Err(error) => {
+                                    log::error!("Can't revert the URI work around on: {uri}")
+                                }
+                            };
+                        }
                         handler(
                             &webview_label,
                             request.request,
@@ -422,6 +434,22 @@ fn is_custom_protocol_uri(uri: &str, http_or_https: &'static str, protocol: &str
     && scheme_len + 3 + protocol_len < uri_len && &uri[scheme_len + 3.. scheme_len + 3 + protocol_len] == protocol
     // and a dot
     && scheme_len + 3 + protocol_len < uri_len && uri.as_bytes()[scheme_len + 3 + protocol_len] == b'.'
+}
+
+// This is a work around wry did for old version of webview2, and tauri also expects it...
+// On Windows, the custom protocol looks like `http://<scheme_name>.<path>` while other platforms, it looks like `<scheme_name>://<path>`
+// And we need to revert this here to align with the wry behavior...
+#[cfg(windows)]
+fn revert_custom_protocol_work_around(
+    uri: &str,
+    http_or_https: &'static str,
+    protocol: &str,
+) -> std::result::Result<Uri, InvalidUri> {
+    uri.replace(
+        &format!("{http_or_https}://{protocol}."),
+        &format!("{protocol}://"),
+    )
+    .parse()
 }
 
 impl<T> Debug for RuntimeContext<T> {
