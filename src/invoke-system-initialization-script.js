@@ -27,12 +27,6 @@
 				return Array.from(new Uint8Array(val))
 			} else if (typeof val === 'object' && val !== null && SERIALIZE_TO_IPC_FN in val) {
 				return val[SERIALIZE_TO_IPC_FN]()
-			} else if (
-				val instanceof Object &&
-				'__TAURI_CHANNEL_MARKER__' in val &&
-				typeof val.id === 'number'
-			) {
-				return `__CHANNEL__:${val.id}`
 			} else {
 				return val
 			}
@@ -60,20 +54,22 @@
 
 		if (!customProtocolIpcFailed) {
 			const { contentType, data } = processIpcMessage(payload)
+
 			// Headers can only contain ascii characters, so encoding is needed,
 			// and since tauri already depends on percent-encoding rust crate, we use `encodeURI` here for that reason
 			const invokeBody = encodeURI(data)
+
+			const headers = new Headers((options && options.headers) || {})
+			headers.set('Content-Type', contentType)
+			headers.set('Tauri-Callback', callback)
+			headers.set('Tauri-Error', error)
+			headers.set('Tauri-Invoke-Key', __TAURI_INVOKE_KEY__)
+			headers.set('Tauri-VersoRuntime-Invoke-Body', invokeBody)
+
 			fetch(window.__TAURI_INTERNALS__.convertFileSrc(cmd, 'ipc'), {
 				method: 'POST',
 				// body: data,
-				headers: {
-					'Content-Type': contentType,
-					'Tauri-Callback': callback,
-					'Tauri-Error': error,
-					'Tauri-Invoke-Key': __TAURI_INVOKE_KEY__,
-					'Tauri-VersoRuntime-Invoke-Body': invokeBody,
-					...((options && options.headers) || {}),
-				},
+				headers,
 			})
 				.then((response) => {
 					const cb = response.headers.get('Tauri-Response') === 'ok' ? callback : error
