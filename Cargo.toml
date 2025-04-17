@@ -24,6 +24,7 @@ verso = { workspace = true }
 tauri = { version = "=2.5.0", default-features = false }
 tauri-runtime = "=2.6.0"
 tauri-utils = "=2.4.0"
+tao = "0.33"
 raw-window-handle = "0.6"
 url = "2"
 http = "1"

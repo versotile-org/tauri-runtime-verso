@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use tauri::Manager;
+use tauri::{Manager, menu::MenuBuilder};
 use tauri_runtime_verso::{INVOKE_SYSTEM_SCRIPTS, VersoRuntime};
 
 #[tauri::command]
@@ -21,10 +21,22 @@ fn main() {
         .invoke_handler(tauri::generate_handler![greet])
         .setup(|app| {
             dbg!(app.get_webview_window("main").unwrap().inner_size()).unwrap();
+            create_tray(app.handle())?;
             Ok(())
         })
         // Make sure to do this or some of the commands will not work
         .invoke_system(INVOKE_SYSTEM_SCRIPTS)
         .run(tauri::generate_context!())
         .expect("error while running tauri application")
+}
+
+fn create_tray<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<()> {
+    let builder = MenuBuilder::new(app).quit();
+    tauri::tray::TrayIconBuilder::with_id("tray-1")
+        .tooltip("Tauri")
+        .icon(app.default_window_icon().unwrap().clone())
+        .menu(&builder.build()?)
+        .show_menu_on_left_click(false)
+        .build(app)?;
+    Ok(())
 }

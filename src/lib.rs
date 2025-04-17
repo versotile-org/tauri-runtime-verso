@@ -76,6 +76,10 @@
 #![allow(unused)]
 
 use http::{Uri, uri::InvalidUri};
+use tao::{
+    event_loop::{ControlFlow, EventLoop, EventLoopBuilder, EventLoopProxy as TaoEventLoopProxy},
+    platform::run_return::EventLoopExtRunReturn,
+};
 use tauri::{LogicalPosition, LogicalSize};
 use tauri_runtime::{
     DeviceEventFilter, Error, EventLoopProxy, ExitRequestedEventAction, Icon, ProgressBarState,
@@ -224,9 +228,10 @@ struct Window {
 }
 
 #[derive(Clone)]
-pub struct RuntimeContext<T> {
+pub struct RuntimeContext<T: UserEvent> {
     windows: Arc<Mutex<HashMap<WindowId, Window>>>,
     run_tx: SyncSender<Message<T>>,
+    event_proxy: TaoEventLoopProxy<Message<T>>,
     main_thread_id: ThreadId,
     next_window_id: Arc<AtomicU32>,
     next_webview_id: Arc<AtomicU32>,
@@ -242,8 +247,8 @@ impl<T: UserEvent> RuntimeContext<T> {
                 return Ok(());
             }
         }
-        self.run_tx
-            .send(message)
+        self.event_proxy
+            .send_event(message)
             .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
@@ -417,6 +422,67 @@ impl<T: UserEvent> RuntimeContext<T> {
             }),
         })
     }
+
+    /// Handles the close window request by sending the [`WindowEvent::CloseRequested`] event
+    /// if the request doesn't request a forced close
+    /// and if not prevented, send [`WindowEvent::Destroyed`]
+    /// then checks if there're windows left, if not, send [`RunEvent::ExitRequested`]
+    /// returns if we should exit the event loop
+    fn handle_close_window_request<F: FnMut(RunEvent<T>) + 'static>(
+        &self,
+        callback: &mut F,
+        id: WindowId,
+        force: bool,
+    ) -> bool {
+        let mut windows = self.windows.lock().unwrap();
+        let Some(window) = windows.get(&id) else {
+            return false;
+        };
+        let label = window.label.clone();
+        let on_window_event_listeners = window.on_window_event_listeners.clone();
+
+        if !force {
+            let (tx, rx) = channel();
+            let window_event = WindowEvent::CloseRequested {
+                signal_tx: tx.clone(),
+            };
+            for handler in on_window_event_listeners.lock().unwrap().values() {
+                handler(&window_event);
+            }
+            callback(RunEvent::WindowEvent {
+                label: label.clone(),
+                event: WindowEvent::CloseRequested { signal_tx: tx },
+            });
+
+            let should_prevent = matches!(rx.try_recv(), Ok(true));
+            if should_prevent {
+                return false;
+            }
+        }
+
+        windows.remove(&id);
+        callback(RunEvent::WindowEvent {
+            label,
+            event: WindowEvent::Destroyed,
+        });
+
+        // This is required becuase tauri puts in a clone of the window in to WindowEventHandler closure,
+        // and we need to clear it for the window to drop or else it will stay there forever
+        on_window_event_listeners.lock().unwrap().clear();
+
+        let is_empty = windows.is_empty();
+        if !is_empty {
+            return false;
+        }
+
+        let (tx, rx) = channel();
+        callback(RunEvent::ExitRequested { code: None, tx });
+
+        let recv = rx.try_recv();
+        let should_prevent = matches!(recv, Ok(ExitRequestedEventAction::Prevent));
+
+        !should_prevent
+    }
 }
 
 // Copied from wry
@@ -452,7 +518,7 @@ fn revert_custom_protocol_work_around(
     .parse()
 }
 
-impl<T> Debug for RuntimeContext<T> {
+impl<T: UserEvent> Debug for RuntimeContext<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RuntimeContext").finish()
     }
@@ -460,7 +526,7 @@ impl<T> Debug for RuntimeContext<T> {
 
 /// A handle to the [`VersoRuntime`] runtime.
 #[derive(Debug, Clone)]
-pub struct VersoRuntimeHandle<T> {
+pub struct VersoRuntimeHandle<T: UserEvent> {
     context: RuntimeContext<T>,
 }
 
@@ -468,9 +534,10 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
     type Runtime = VersoRuntime<T>;
 
     fn create_proxy(&self) -> EventProxy<T> {
-        EventProxy {
-            run_tx: self.context.run_tx.clone(),
-        }
+        // EventProxy {
+        //     run_tx: self.context.run_tx.clone(),
+        // }
+        EventProxy(self.context.event_proxy.clone())
     }
 
     /// Unsupported, has no effect
@@ -586,13 +653,13 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
 
 /// The Tauri [`WebviewDispatch`] for [`VersoRuntime`].
 #[derive(Clone)]
-pub struct VersoWebviewDispatcher<T> {
+pub struct VersoWebviewDispatcher<T: UserEvent> {
     id: u32,
     context: RuntimeContext<T>,
     webview: Arc<Mutex<VersoviewController>>,
 }
 
-impl<T> Debug for VersoWebviewDispatcher<T> {
+impl<T: UserEvent> Debug for VersoWebviewDispatcher<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("VersoWebviewDispatcher")
             .field("id", &self.id)
@@ -604,14 +671,14 @@ impl<T> Debug for VersoWebviewDispatcher<T> {
 
 /// The Tauri [`WindowDispatch`] for [`VersoRuntime`].
 #[derive(Clone)]
-pub struct VersoWindowDispatcher<T> {
+pub struct VersoWindowDispatcher<T: UserEvent> {
     id: WindowId,
     context: RuntimeContext<T>,
     webview: Arc<Mutex<VersoviewController>>,
     on_window_event_listeners: WindowEventListeners,
 }
 
-impl<T> Debug for VersoWindowDispatcher<T> {
+impl<T: UserEvent> Debug for VersoWindowDispatcher<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("VersoWebviewDispatcher")
             .field("id", &self.id)
@@ -1566,15 +1633,24 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 }
 
+// #[derive(Debug, Clone)]
+// pub struct EventProxy<T> {
+//     run_tx: SyncSender<Message<T>>,
+// }
 #[derive(Debug, Clone)]
-pub struct EventProxy<T> {
-    run_tx: SyncSender<Message<T>>,
-}
+pub struct EventProxy<T: UserEvent>(TaoEventLoopProxy<Message<T>>);
 
+// impl<T: UserEvent> EventLoopProxy<T> for EventProxy<T> {
+//     fn send_event(&self, event: T) -> Result<()> {
+//         self.run_tx
+//             .send(Message::UserEvent(event))
+//             .map_err(|_| Error::FailedToSendMessage)
+//     }
+// }
 impl<T: UserEvent> EventLoopProxy<T> for EventProxy<T> {
     fn send_event(&self, event: T) -> Result<()> {
-        self.run_tx
-            .send(Message::UserEvent(event))
+        self.0
+            .send_event(Message::UserEvent(event))
             .map_err(|_| Error::FailedToSendMessage)
     }
 }
@@ -1584,14 +1660,16 @@ impl<T: UserEvent> EventLoopProxy<T> for EventProxy<T> {
 pub struct VersoRuntime<T: UserEvent = tauri::EventLoopMessage> {
     pub context: RuntimeContext<T>,
     run_rx: Receiver<Message<T>>,
+    event_loop: EventLoop<Message<T>>,
 }
 
 impl<T: UserEvent> VersoRuntime<T> {
-    fn init() -> Self {
+    fn init(event_loop: EventLoop<Message<T>>) -> Self {
         let (tx, rx) = sync_channel(256);
         let context = RuntimeContext {
             windows: Default::default(),
             run_tx: tx,
+            event_proxy: event_loop.create_proxy(),
             main_thread_id: current_thread().id(),
             next_window_id: Default::default(),
             next_webview_id: Default::default(),
@@ -1601,68 +1679,8 @@ impl<T: UserEvent> VersoRuntime<T> {
         Self {
             context,
             run_rx: rx,
+            event_loop,
         }
-    }
-
-    /// Handles the close window request by sending the [`WindowEvent::CloseRequested`] event
-    /// if the request doesn't request a forced close
-    /// and if not prevented, send [`WindowEvent::Destroyed`]
-    /// then checks if there're windows left, if not, send [`RunEvent::ExitRequested`]
-    /// returns if we should exit the event loop
-    fn handle_close_window_request<F: FnMut(RunEvent<T>) + 'static>(
-        &self,
-        callback: &mut F,
-        id: WindowId,
-        force: bool,
-    ) -> bool {
-        let mut windows = self.context.windows.lock().unwrap();
-        let Some(window) = windows.get(&id) else {
-            return false;
-        };
-        let label = window.label.clone();
-        let on_window_event_listeners = window.on_window_event_listeners.clone();
-
-        if !force {
-            let (tx, rx) = channel();
-            let window_event = WindowEvent::CloseRequested {
-                signal_tx: tx.clone(),
-            };
-            for handler in on_window_event_listeners.lock().unwrap().values() {
-                handler(&window_event);
-            }
-            callback(RunEvent::WindowEvent {
-                label: label.clone(),
-                event: WindowEvent::CloseRequested { signal_tx: tx },
-            });
-
-            let should_prevent = matches!(rx.try_recv(), Ok(true));
-            if should_prevent {
-                return false;
-            }
-        }
-
-        windows.remove(&id);
-        callback(RunEvent::WindowEvent {
-            label,
-            event: WindowEvent::Destroyed,
-        });
-
-        // This is required becuase tauri puts in a clone of the window in to WindowEventHandler closure,
-        // and we need to clear it for the window to drop or else it will stay there forever
-        on_window_event_listeners.lock().unwrap().clear();
-
-        let is_empty = windows.is_empty();
-        if !is_empty {
-            return false;
-        }
-
-        let (tx, rx) = channel();
-        callback(RunEvent::ExitRequested { code: None, tx });
-
-        let recv = rx.try_recv();
-        let should_prevent = matches!(recv, Ok(ExitRequestedEventAction::Prevent));
-
-        !should_prevent
     }
 }
 
@@ -1674,19 +1692,22 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
 
     /// `args` not supported
     fn new(_args: RuntimeInitArgs) -> Result<Self> {
-        Ok(Self::init())
+        let mut event_loop_builder = EventLoopBuilder::<Message<T>>::with_user_event();
+        Ok(Self::init(event_loop_builder.build()))
     }
 
     /// `args` not supported
     #[cfg(any(windows, target_os = "linux"))]
     fn new_any_thread(_args: RuntimeInitArgs) -> Result<Self> {
-        Ok(Self::init())
+        let mut event_loop_builder = EventLoopBuilder::<Message<T>>::with_user_event();
+        Ok(Self::init(event_loop_builder.build()))
     }
 
     fn create_proxy(&self) -> EventProxy<T> {
-        EventProxy {
-            run_tx: self.context.run_tx.clone(),
-        }
+        // EventProxy {
+        //     run_tx: self.context.run_tx.clone(),
+        // }
+        EventProxy(self.event_loop.create_proxy())
     }
 
     fn handle(&self) -> Self::Handle {
@@ -1765,45 +1786,52 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
         // std::process::exit(exit_code);
     }
 
-    fn run_return<F: FnMut(RunEvent<T>) + 'static>(self, mut callback: F) -> i32 {
+    fn run_return<F: FnMut(RunEvent<T>) + 'static>(mut self, mut callback: F) -> i32 {
         callback(RunEvent::Ready);
 
-        while let Ok(m) = self.run_rx.recv() {
-            match m {
-                Message::Task(p) => p(),
-                Message::CloseWindow(id) => {
-                    let should_exit = self.handle_close_window_request(&mut callback, id, false);
-                    if should_exit {
-                        break;
-                    }
-                }
-                Message::DestroyWindow(id) => {
-                    let should_exit = self.handle_close_window_request(&mut callback, id, true);
-                    if should_exit {
-                        break;
-                    }
-                }
-                Message::RequestExit(code) => {
-                    let (tx, rx) = channel();
-                    callback(RunEvent::ExitRequested {
-                        code: Some(code),
-                        tx,
-                    });
+        let context = self.context.clone();
 
-                    let recv = rx.try_recv();
-                    let should_prevent = matches!(recv, Ok(ExitRequestedEventAction::Prevent));
-
-                    if !should_prevent {
-                        break;
+        let result = self
+            .event_loop
+            .run_return(|event, event_loop, control_flow| match event {
+                tao::event::Event::UserEvent(user_event) => match user_event {
+                    Message::Task(p) => p(),
+                    Message::CloseWindow(id) => {
+                        let should_exit =
+                            context.handle_close_window_request(&mut callback, id, false);
+                        if should_exit {
+                            *control_flow = ControlFlow::Exit;
+                        }
                     }
-                }
-                Message::UserEvent(user_event) => callback(RunEvent::UserEvent(user_event)),
-            }
-        }
+                    Message::DestroyWindow(id) => {
+                        let should_exit =
+                            context.handle_close_window_request(&mut callback, id, true);
+                        if should_exit {
+                            *control_flow = ControlFlow::Exit;
+                        }
+                    }
+                    Message::RequestExit(code) => {
+                        let (tx, rx) = channel();
+                        callback(RunEvent::ExitRequested {
+                            code: Some(code),
+                            tx,
+                        });
+
+                        let recv = rx.try_recv();
+                        let should_prevent = matches!(recv, Ok(ExitRequestedEventAction::Prevent));
+
+                        if !should_prevent {
+                            *control_flow = ControlFlow::Exit;
+                        }
+                    }
+                    Message::UserEvent(user_event) => callback(RunEvent::UserEvent(user_event)),
+                },
+                _ => {}
+            });
 
         callback(RunEvent::Exit);
 
-        0
+        result
     }
 
     /// Unsupported, will always return `PhysicalPosition { x: 0, y: 0 }`
