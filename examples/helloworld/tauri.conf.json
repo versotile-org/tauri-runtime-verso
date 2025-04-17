@@ -11,9 +11,8 @@
     "windows": [
       {
         "title": "Welcome to Tauri!",
-        "width": 800,
-        "height": 600,
-        "decorations": false
+        "width": 700,
+        "height": 500
       }
     ]
   },

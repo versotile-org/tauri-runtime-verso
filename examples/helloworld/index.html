@@ -25,36 +25,13 @@
 			body {
 				display: flex;
 				flex-direction: column;
-				gap: 1em;
 				margin: 0;
-			}
-
-			.title-bar {
-				display: flex;
-				flex-direction: row-reverse;
-			}
-
-			.title-bar button {
-				display: inline-flex;
-				appearance: none;
-				padding: 0;
-				margin: 0;
-				border: none;
-				width: 1em;
-				height: 1em;
-				justify-content: center;
-				align-items: center;
-				background-color: transparent;
-				font-size: 1.5em;
-			}
-			.title-bar button:hover {
-				background-color: rgb(232, 17, 35);
-				color: white;
+				height: 100vh;
 			}
 
 			.title {
-				margin: 0;
-				padding: 1em;
+				margin-top: 3em;
+				margin-bottom: 2em;
 				text-align: center;
 			}
 
@@ -106,12 +83,6 @@
 		</style>
 		<script type="module">
 			const { invoke } = window.__TAURI__.core
-			const { getCurrentWindow } = window.__TAURI__.window
-
-			const closeButton = document.getElementById('close-button')
-			closeButton.addEventListener('click', async () => {
-				await getCurrentWindow().close()
-			})
 
 			const form = document.querySelector('#form')
 			const nameEl = document.querySelector('#name')
@@ -127,10 +98,6 @@
 		</script>
 	</head>
 	<body>
-		<div class="title-bar" data-tauri-drag-region>
-			<button id="close-button">×</button>
-		</div>
-
 		<h1 class="title">Welcome to Tauri!</h1>
 
 		<div class="form-and-message">

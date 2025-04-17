@@ -5,8 +5,6 @@
 		"main"
 	],
 	"permissions": [
-		"core:default",
-		"core:window:allow-close",
-		"core:window:allow-start-dragging"
+		"core:default"
 	]
 }
