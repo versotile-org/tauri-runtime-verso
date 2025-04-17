@@ -230,7 +230,6 @@ struct Window {
 #[derive(Clone)]
 pub struct RuntimeContext<T: UserEvent> {
     windows: Arc<Mutex<HashMap<WindowId, Window>>>,
-    run_tx: SyncSender<Message<T>>,
     event_proxy: TaoEventLoopProxy<Message<T>>,
     main_thread_id: ThreadId,
     next_window_id: Arc<AtomicU32>,
@@ -382,10 +381,10 @@ impl<T: UserEvent> RuntimeContext<T> {
             }
         }
 
-        let sender = self.run_tx.clone();
+        let sender = self.event_proxy.clone();
         webview
             .on_close_requested(move || {
-                let _ = sender.send(Message::CloseWindow(window_id));
+                let _ = sender.send_event(Message::CloseWindow(window_id));
             })
             .map_err(|_| tauri_runtime::Error::CreateWindow)?;
 
@@ -534,9 +533,6 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
     type Runtime = VersoRuntime<T>;
 
     fn create_proxy(&self) -> EventProxy<T> {
-        // EventProxy {
-        //     run_tx: self.context.run_tx.clone(),
-        // }
         EventProxy(self.context.event_proxy.clone())
     }
 
@@ -1633,20 +1629,9 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 }
 
-// #[derive(Debug, Clone)]
-// pub struct EventProxy<T> {
-//     run_tx: SyncSender<Message<T>>,
-// }
 #[derive(Debug, Clone)]
 pub struct EventProxy<T: UserEvent>(TaoEventLoopProxy<Message<T>>);
 
-// impl<T: UserEvent> EventLoopProxy<T> for EventProxy<T> {
-//     fn send_event(&self, event: T) -> Result<()> {
-//         self.run_tx
-//             .send(Message::UserEvent(event))
-//             .map_err(|_| Error::FailedToSendMessage)
-//     }
-// }
 impl<T: UserEvent> EventLoopProxy<T> for EventProxy<T> {
     fn send_event(&self, event: T) -> Result<()> {
         self.0
@@ -1659,16 +1644,13 @@ impl<T: UserEvent> EventLoopProxy<T> for EventProxy<T> {
 #[derive(Debug)]
 pub struct VersoRuntime<T: UserEvent = tauri::EventLoopMessage> {
     pub context: RuntimeContext<T>,
-    run_rx: Receiver<Message<T>>,
     event_loop: EventLoop<Message<T>>,
 }
 
 impl<T: UserEvent> VersoRuntime<T> {
     fn init(event_loop: EventLoop<Message<T>>) -> Self {
-        let (tx, rx) = sync_channel(256);
         let context = RuntimeContext {
             windows: Default::default(),
-            run_tx: tx,
             event_proxy: event_loop.create_proxy(),
             main_thread_id: current_thread().id(),
             next_window_id: Default::default(),
@@ -1678,7 +1660,6 @@ impl<T: UserEvent> VersoRuntime<T> {
         };
         Self {
             context,
-            run_rx: rx,
             event_loop,
         }
     }
@@ -1704,9 +1685,6 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
     }
 
     fn create_proxy(&self) -> EventProxy<T> {
-        // EventProxy {
-        //     run_tx: self.context.run_tx.clone(),
-        // }
         EventProxy(self.event_loop.create_proxy())
     }
 
