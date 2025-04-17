@@ -77,6 +77,7 @@
 
 use http::{Uri, uri::InvalidUri};
 use tao::{
+    event::Event as TaoEvent,
     event_loop::{ControlFlow, EventLoop, EventLoopBuilder, EventLoopProxy as TaoEventLoopProxy},
     platform::run_return::EventLoopExtRunReturn,
 };
@@ -1681,6 +1682,11 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
     #[cfg(any(windows, target_os = "linux"))]
     fn new_any_thread(_args: RuntimeInitArgs) -> Result<Self> {
         let mut event_loop_builder = EventLoopBuilder::<Message<T>>::with_user_event();
+        #[cfg(target_os = "linux")]
+        use tao::platform::unix::EventLoopBuilderExtUnix;
+        #[cfg(windows)]
+        use tao::platform::windows::EventLoopBuilderExtWindows;
+        event_loop_builder.with_any_thread(true);
         Ok(Self::init(event_loop_builder.build()))
     }
 
@@ -1772,7 +1778,7 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
         let result = self
             .event_loop
             .run_return(|event, event_loop, control_flow| match event {
-                tao::event::Event::UserEvent(user_event) => match user_event {
+                TaoEvent::UserEvent(user_event) => match user_event {
                     Message::Task(p) => p(),
                     Message::CloseWindow(id) => {
                         let should_exit =
