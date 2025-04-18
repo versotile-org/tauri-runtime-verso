@@ -100,6 +100,7 @@ use verso::{VersoBuilder, VersoviewController};
 use windows::Win32::Foundation::HWND;
 
 use std::{
+    borrow::Cow,
     collections::HashMap,
     env::current_exe,
     fmt::{self, Debug},
@@ -305,6 +306,12 @@ impl<T: UserEvent> RuntimeContext<T> {
             .build(get_verso_path(), Url::parse(&pending_webview.url).unwrap());
 
         let webview_label = label.clone();
+        let sender = self.event_proxy.clone();
+        let uri_scheme_protocols: HashMap<_, _> = pending_webview
+            .uri_scheme_protocols
+            .into_iter()
+            .map(|(key, value)| (key, Arc::new(value)))
+            .collect();
         webview
             .on_web_resource_requested(move |mut request, response_fn| {
                 // dbg!(&request);
@@ -316,9 +323,9 @@ impl<T: UserEvent> RuntimeContext<T> {
                         .headers_mut()
                         .insert("Origin", "http://tauri.localhost/".parse().unwrap());
                 }
-                for (scheme, handler) in &pending_webview.uri_scheme_protocols {
+                for (scheme, handler) in &uri_scheme_protocols {
                     // Since servo doesn't support body in its EmbedderMsg::WebResourceRequested yet,
-                    // we use a head instead for now
+                    // we use a header instead for now
                     if scheme == "ipc" {
                         if let Some(data) = request
                             .request
@@ -358,13 +365,18 @@ impl<T: UserEvent> RuntimeContext<T> {
                                 }
                             };
                         }
-                        handler(
-                            &webview_label,
-                            request.request,
-                            Box::new(move |response| {
-                                response_fn(Some(response.map(std::borrow::Cow::into_owned)));
-                            }),
-                        );
+                        // Run the handler on main thread, this is needed because Tauri expects this
+                        let handler = handler.clone();
+                        let webview_label = webview_label.clone();
+                        sender.send_event(Message::Task(Box::new(move || {
+                            handler(
+                                &webview_label,
+                                request.request,
+                                Box::new(move |response| {
+                                    response_fn(Some(response.map(Cow::into_owned)));
+                                }),
+                            );
+                        })));
                         return;
                     }
                 }
@@ -1769,19 +1781,15 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
                 TaoEvent::NewEvents(StartCause::Init) => {
                     callback(RunEvent::Ready);
                 }
-
                 TaoEvent::NewEvents(StartCause::Poll) => {
                     callback(RunEvent::Resumed);
                 }
-
                 TaoEvent::MainEventsCleared => {
                     callback(RunEvent::MainEventsCleared);
                 }
-
                 TaoEvent::LoopDestroyed => {
                     callback(RunEvent::Exit);
                 }
-
                 TaoEvent::UserEvent(user_event) => match user_event {
                     Message::Task(p) => p(),
                     Message::CloseWindow(id) => {
