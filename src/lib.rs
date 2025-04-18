@@ -487,18 +487,7 @@ impl<T: UserEvent> RuntimeContext<T> {
 // Copied from wry
 #[cfg(windows)]
 fn is_custom_protocol_uri(uri: &str, http_or_https: &'static str, protocol: &str) -> bool {
-    let uri_len = uri.len();
-    let scheme_len = http_or_https.len();
-    let protocol_len = protocol.len();
-
-    // starts with `http` or `https``
-    &uri[..scheme_len] == http_or_https
-    // followed by `://`
-    && &uri[scheme_len..scheme_len + 3] == "://"
-    // followed by custom protocol name
-    && scheme_len + 3 + protocol_len < uri_len && &uri[scheme_len + 3.. scheme_len + 3 + protocol_len] == protocol
-    // and a dot
-    && scheme_len + 3 + protocol_len < uri_len && uri.as_bytes()[scheme_len + 3 + protocol_len] == b'.'
+    uri.starts_with(&work_around_uri_prefix(http_or_https, protocol))
 }
 
 // This is a work around wry did for old version of webview2, and tauri also expects it...
@@ -511,10 +500,15 @@ fn revert_custom_protocol_work_around(
     protocol: &str,
 ) -> std::result::Result<http::Uri, http::uri::InvalidUri> {
     uri.replace(
-        &format!("{http_or_https}://{protocol}."),
+        &work_around_uri_prefix(http_or_https, protocol),
         &format!("{protocol}://"),
     )
     .parse()
+}
+
+#[cfg(windows)]
+fn work_around_uri_prefix(http_or_https: &str, protocol: &str) -> String {
+    format!("{http_or_https}://{protocol}.")
 }
 
 impl<T: UserEvent> Debug for RuntimeContext<T> {
