@@ -76,7 +76,7 @@
 #![allow(unused)]
 
 use tao::{
-    event::Event as TaoEvent,
+    event::{Event as TaoEvent, StartCause},
     event_loop::{ControlFlow, EventLoop, EventLoopBuilder, EventLoopProxy as TaoEventLoopProxy},
     platform::run_return::EventLoopExtRunReturn,
 };
@@ -1770,25 +1770,38 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
     }
 
     fn run_return<F: FnMut(RunEvent<T>) + 'static>(mut self, mut callback: F) -> i32 {
-        callback(RunEvent::Ready);
-
-        let context = self.context.clone();
-
-        let result = self
-            .event_loop
+        self.event_loop
             .run_return(|event, event_loop, control_flow| match event {
+                TaoEvent::NewEvents(StartCause::Init) => {
+                    callback(RunEvent::Ready);
+                }
+
+                TaoEvent::NewEvents(StartCause::Poll) => {
+                    callback(RunEvent::Resumed);
+                }
+
+                TaoEvent::MainEventsCleared => {
+                    callback(RunEvent::MainEventsCleared);
+                }
+
+                TaoEvent::LoopDestroyed => {
+                    callback(RunEvent::Exit);
+                }
+
                 TaoEvent::UserEvent(user_event) => match user_event {
                     Message::Task(p) => p(),
                     Message::CloseWindow(id) => {
                         let should_exit =
-                            context.handle_close_window_request(&mut callback, id, false);
+                            self.context
+                                .handle_close_window_request(&mut callback, id, false);
                         if should_exit {
                             *control_flow = ControlFlow::Exit;
                         }
                     }
                     Message::DestroyWindow(id) => {
                         let should_exit =
-                            context.handle_close_window_request(&mut callback, id, true);
+                            self.context
+                                .handle_close_window_request(&mut callback, id, true);
                         if should_exit {
                             *control_flow = ControlFlow::Exit;
                         }
@@ -1810,11 +1823,7 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
                     Message::UserEvent(user_event) => callback(RunEvent::UserEvent(user_event)),
                 },
                 _ => {}
-            });
-
-        callback(RunEvent::Exit);
-
-        result
+            })
     }
 
     /// Unsupported, will always return `PhysicalPosition { x: 0, y: 0 }`
