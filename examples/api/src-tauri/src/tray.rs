@@ -1,21 +1,23 @@
 use tauri::{
+    AppHandle, Runtime,
     menu::{MenuBuilder, MenuItemBuilder},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
 };
 
-pub fn create_tray<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<()> {
+pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     const CLICK_ME_ID: &str = "click-me";
-    let builder = MenuBuilder::new(app)
+    let menu = MenuBuilder::new(app)
         .item(
             &MenuItemBuilder::new("Click me!")
                 .id(CLICK_ME_ID)
                 .build(app)?,
         )
-        .quit();
+        .quit()
+        .build()?;
     TrayIconBuilder::new()
         .tooltip("Tauri")
         .icon(app.default_window_icon().unwrap().clone())
-        .menu(&builder.build()?)
+        .menu(&menu)
         .show_menu_on_left_click(false)
         .on_tray_icon_event(|_tray, event| match event {
             TrayIconEvent::Click {
