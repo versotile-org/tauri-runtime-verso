@@ -75,7 +75,6 @@
 
 #![allow(unused)]
 
-use http::{Uri, uri::InvalidUri};
 use tao::{
     event::Event as TaoEvent,
     event_loop::{ControlFlow, EventLoop, EventLoopBuilder, EventLoopProxy as TaoEventLoopProxy},
@@ -108,7 +107,7 @@ use std::{
     sync::{
         Arc, Mutex, OnceLock,
         atomic::{AtomicU32, Ordering},
-        mpsc::{Receiver, SyncSender, channel, sync_channel},
+        mpsc::channel,
     },
     thread::{ThreadId, current as current_thread},
 };
@@ -510,7 +509,7 @@ fn revert_custom_protocol_work_around(
     uri: &str,
     http_or_https: &'static str,
     protocol: &str,
-) -> std::result::Result<Uri, InvalidUri> {
+) -> std::result::Result<http::Uri, http::uri::InvalidUri> {
     uri.replace(
         &format!("{http_or_https}://{protocol}."),
         &format!("{protocol}://"),
