@@ -14,7 +14,7 @@ tauri = { version = "2", default-features = false, features = [
     # "compression",
     "common-controls-v6",
     # Additional features
-    # "devtools",
+    # "tray-icon",
 ] }
 tauri-runtime-verso = { path = "../../" }
 # serde = "1"

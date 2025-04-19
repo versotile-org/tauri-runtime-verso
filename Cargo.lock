@@ -4015,6 +4015,7 @@ dependencies = [
  "log",
  "percent-encoding",
  "raw-window-handle",
+ "tao",
  "tauri",
  "tauri-runtime",
  "tauri-utils",

@@ -83,6 +83,6 @@ Then go to `about:debugging` in Firefox and connect to `localhost:1234` there
 
 ## Known limitations
 
-Currently, tray icon and menu are not supported because we don't have an actuall event loop yet
+Currently, only the app wide menus on macOS are supported, per window menus are not supported yet
 
 For more, checkout the [documentation](https://versotile-org.github.io/tauri-runtime-verso/tauri_runtime_verso)

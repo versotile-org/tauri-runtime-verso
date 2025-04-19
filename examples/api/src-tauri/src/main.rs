@@ -1,5 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod tray;
+
 use tauri::WebviewWindowBuilder;
 use tauri_runtime_verso::{INVOKE_SYSTEM_SCRIPTS, VersoRuntime};
 
@@ -25,6 +27,7 @@ fn main() {
                 .inner_size(900., 700.)
                 .decorations(false)
                 .build()?;
+            tray::create_tray(app.handle())?;
             Ok(())
         })
         .run(tauri::generate_context!())
