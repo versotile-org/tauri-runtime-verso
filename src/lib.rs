@@ -351,8 +351,7 @@ impl<T: UserEvent> RuntimeContext<T> {
                         },
                     );
                     #[cfg(windows)]
-                    let is_custom_protocol_uri =
-                        is_custom_protocol_uri(&uri, http_or_https, scheme);
+                    let is_custom_protocol_uri = is_work_around_uri(&uri, http_or_https, scheme);
                     #[cfg(not(windows))]
                     let is_custom_protocol_uri = request.request.uri().scheme_str() == Some(scheme);
                     if is_custom_protocol_uri {
@@ -497,9 +496,18 @@ impl<T: UserEvent> RuntimeContext<T> {
 }
 
 // Copied from wry
+/// WebView2 supports non-standard protocols only on Windows 10+, so we have to use a workaround,
+/// conveting `{protocol}://localhost/abc` to `{http_or_https}://{protocol}.localhost/abc`,
+/// and this function tests if the URI starts with `{http_or_https}://{protocol}.`
+///
+/// See https://github.com/MicrosoftEdge/WebView2Feedback/issues/73
 #[cfg(windows)]
-fn is_custom_protocol_uri(uri: &str, http_or_https: &'static str, protocol: &str) -> bool {
-    uri.starts_with(&work_around_uri_prefix(http_or_https, protocol))
+fn is_work_around_uri(uri: &str, http_or_https: &str, protocol: &str) -> bool {
+    uri.strip_prefix(http_or_https)
+        .and_then(|rest| rest.strip_prefix("://"))
+        .and_then(|rest| rest.strip_prefix(protocol))
+        .and_then(|rest| rest.strip_prefix("."))
+        .is_some()
 }
 
 // This is a work around wry did for old version of webview2, and tauri also expects it...
