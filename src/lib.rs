@@ -42,14 +42,10 @@
 //!
 //! Finally, setup the code like this:
 //!
-//! ```rust
-//! use tauri_runtime_verso::{INVOKE_SYSTEM_SCRIPTS, VersoRuntime};
-//!
+//! ```diff
 //! fn main() {
-//!     // Set `tauri::Builder`'s generic to `VersoRuntime`
-//!     tauri::Builder::<VersoRuntime>::new()
-//!         // Make sure to do this or some of the commands will not work
-//!         .invoke_system(INVOKE_SYSTEM_SCRIPTS)
+//! -   tauri::Builder::<VersoRuntime>::new()
+//! +   tauri_runtime_verso::builder()
 //!         .run(tauri::generate_context!())
 //!         .unwrap();
 //! }
@@ -123,7 +119,7 @@ static VERSO_PATH: OnceLock<PathBuf> = OnceLock::new();
 /// ```
 /// fn main() {
 ///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview");
-///     tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
+///     tauri_runtime_verso::builder()
 ///         .run(tauri::generate_context!())
 ///         .unwrap();
 /// }
@@ -163,7 +159,7 @@ static VERSO_RESOURCES_DIRECTORY: Mutex<Option<PathBuf>> = Mutex::new(None);
 /// fn main() {
 ///     tauri_runtime_verso::set_verso_path("../verso/target/debug/versoview");
 ///     tauri_runtime_verso::set_verso_resource_directory("../verso/resources");
-///     tauri::Builder::<tauri_runtime_verso::VersoRuntime>::new()
+///     tauri_runtime_verso::builder()
 ///         .run(tauri::generate_context!())
 ///         .unwrap();
 /// }
@@ -179,7 +175,8 @@ fn get_verso_resource_directory() -> Option<PathBuf> {
     VERSO_RESOURCES_DIRECTORY.lock().unwrap().clone()
 }
 
-/// You need to set this on [`tauri::Builder::invoke_system`] for the invoke system to work
+/// You need to set this on [`tauri::Builder::invoke_system`] for the invoke system to work,
+/// you can skip this if you're using [`tauri_runtime_verso::builder`](builder)
 ///
 /// ### Example:
 ///
@@ -209,6 +206,22 @@ pub fn set_verso_devtools_port(port: u16) {
 
 fn get_verso_devtools_port() -> Option<u16> {
     *DEV_TOOLS_PORT.lock().unwrap()
+}
+
+/// Creates a new [`tauri::Builder`] using the [`VersoRuntime`]
+///
+/// ### Example:
+///
+/// ```no_run
+/// fn main() {
+///     // instead of `tauri::Builder::new()`
+///     tauri_runtime_verso::builder()
+///         .run(tauri::generate_context!())
+///         .unwrap();
+/// }
+/// ```
+pub fn builder() -> tauri::Builder<VersoRuntime> {
+    tauri::Builder::new().invoke_system(INVOKE_SYSTEM_SCRIPTS)
 }
 
 enum Message<T> {

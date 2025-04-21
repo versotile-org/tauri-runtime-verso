@@ -44,20 +44,16 @@ Then add the downloaded executable to your tauri config file (`tauri.conf.json`)
 
 Finally, setup the code like this:
 
-```rust
-use tauri_runtime_verso::{INVOKE_SYSTEM_SCRIPTS, VersoRuntime};
-
+```diff
 fn main() {
-    // Set `tauri::Builder`'s generic to `VersoRuntime`
-    tauri::Builder::<VersoRuntime>::new()
-        // Make sure to do this or some of the commands will not work
-        .invoke_system(INVOKE_SYSTEM_SCRIPTS)
+-   tauri::Builder::<VersoRuntime>::new()
++   tauri_runtime_verso::builder()
         .run(tauri::generate_context!())
         .unwrap();
 }
 ```
 
-For more, take a look at the [hello world example](examples/helloworld), or a more sophisticated [api example](examples/api) show casing how you can use [`react`](https://react.dev/) in it and how to bundle the versoview executable and resource directory with `tauri-cli`'s bundler feature so you can actually easily distribute your app
+For more, take a look at the [hello world example](examples/helloworld), or a more sophisticated [api example](examples/api) show casing how you can use [`React`](https://react.dev/) in it and how to bundle the versoview executable and resource directory with `tauri-cli`'s bundler feature so you can actually easily distribute your app
 
 Also, you can checkout the [documentation](https://versotile-org.github.io/tauri-runtime-verso/tauri_runtime_verso)
 

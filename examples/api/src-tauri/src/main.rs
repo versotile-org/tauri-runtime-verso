@@ -3,7 +3,6 @@
 mod tray;
 
 use tauri::WebviewWindowBuilder;
-use tauri_runtime_verso::{INVOKE_SYSTEM_SCRIPTS, VersoRuntime};
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -11,8 +10,7 @@ fn greet(name: &str) -> String {
 }
 
 fn main() {
-    // Set `tauri::Builder`'s generic to `VersoRuntime`
-    tauri::Builder::<VersoRuntime>::new()
+    tauri_runtime_verso::builder()
         .plugin(
             tauri_plugin_log::Builder::default()
                 .level(log::LevelFilter::Info)
@@ -20,8 +18,6 @@ fn main() {
         )
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![greet])
-        // Make sure to do this or some of the commands will not work
-        .invoke_system(INVOKE_SYSTEM_SCRIPTS)
         .setup(|app| {
             WebviewWindowBuilder::new(app, "main", Default::default())
                 .inner_size(900., 700.)
