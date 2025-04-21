@@ -44,7 +44,7 @@
 //!
 //! ```diff
 //! fn main() {
-//! -   tauri::Builder::<VersoRuntime>::new()
+//! -   tauri::Builder::new()
 //! +   tauri_runtime_verso::builder()
 //!         .run(tauri::generate_context!())
 //!         .unwrap();
