@@ -73,7 +73,10 @@
 
 use tao::{
     event::{Event as TaoEvent, StartCause},
-    event_loop::{ControlFlow, EventLoop, EventLoopBuilder, EventLoopProxy as TaoEventLoopProxy},
+    event_loop::{
+        ControlFlow, EventLoop, EventLoopBuilder, EventLoopProxy as TaoEventLoopProxy,
+        EventLoopWindowTarget as TaoEventLoopWindowTarget,
+    },
     platform::run_return::EventLoopExtRunReturn,
 };
 use tauri::{LogicalPosition, LogicalSize};
@@ -224,8 +227,13 @@ pub fn builder() -> tauri::Builder<VersoRuntime> {
     tauri::Builder::new().invoke_system(INVOKE_SYSTEM_SCRIPTS)
 }
 
-enum Message<T> {
-    Task(Box<dyn FnOnce() + Send>),
+type Task = Box<dyn FnOnce() + Send + 'static>;
+type TaskWithEventLoop<T> = Box<dyn FnOnce(&TaoEventLoopWindowTarget<Message<T>>) + Send + 'static>;
+
+enum Message<T: UserEvent> {
+    Task(Task),
+    /// Run task with the [`EventLoopWindowTarget`](TaoEventLoopWindowTarget)
+    TaskWithEventLoop(TaskWithEventLoop<T>),
     CloseWindow(WindowId),
     DestroyWindow(WindowId),
     RequestExit(i32),
@@ -264,6 +272,27 @@ impl<T: UserEvent> RuntimeContext<T> {
             .send_event(message)
             .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
+    }
+
+    /// Run a task on the main thread.
+    fn run_on_main_thread<F: FnOnce() + Send + 'static>(&self, f: F) -> Result<()> {
+        self.send_message(Message::Task(Box::new(f)))
+    }
+
+    /// Run a task on the main thread.
+    fn run_on_main_thread_with_event_loop<
+        X: Send + Sync + 'static,
+        F: FnOnce(&TaoEventLoopWindowTarget<Message<T>>) -> X + Send + 'static,
+    >(
+        &self,
+        f: F,
+    ) -> Result<X> {
+        let (tx, rx) = channel();
+        self.send_message(Message::TaskWithEventLoop(Box::new(move |e| {
+            let _ = tx.send(f(e));
+        })))?;
+        rx.recv()
+            .map_err(|_| tauri_runtime::Error::FailedToReceiveMessage)
     }
 
     fn next_window_id(&self) -> WindowId {
@@ -619,22 +648,32 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
 
     /// Run a task on the main thread.
     fn run_on_main_thread<F: FnOnce() + Send + 'static>(&self, f: F) -> Result<()> {
-        self.context.send_message(Message::Task(Box::new(f)))
+        self.context.run_on_main_thread(f)
     }
 
-    /// Unsupported, always returns [`None`]
     fn primary_monitor(&self) -> Option<Monitor> {
-        None
+        self.context
+            .run_on_main_thread_with_event_loop(|e| e.tauri_primary_monitor())
+            .ok()
+            .flatten()
     }
 
-    /// Unsupported, always returns [`None`]
     fn monitor_from_point(&self, x: f64, y: f64) -> Option<Monitor> {
-        None
+        self.context
+            .run_on_main_thread_with_event_loop(move |e| e.tauri_monitor_from_point(x, y))
+            .ok()
+            .flatten()
     }
 
-    /// Unsupported, always returns an empty vector
     fn available_monitors(&self) -> Vec<Monitor> {
-        Vec::new()
+        self.context
+            .run_on_main_thread_with_event_loop(|e| e.tauri_available_monitors())
+            .unwrap()
+    }
+
+    fn cursor_position(&self) -> Result<PhysicalPosition<f64>> {
+        self.context
+            .run_on_main_thread_with_event_loop(|e| e.tauri_cursor_position())?
     }
 
     /// Unsupported, has no effect when called
@@ -650,11 +689,6 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
     #[cfg(target_os = "macos")]
     fn hide(&self) -> Result<()> {
         Ok(())
-    }
-
-    /// Unsupported, will always return `PhysicalPosition { x: 0, y: 0 }`
-    fn cursor_position(&self) -> Result<PhysicalPosition<f64>> {
-        Ok(PhysicalPosition::default())
     }
 
     /// Unsupported, will always return an error
@@ -1004,7 +1038,7 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher<T> {
     type Runtime = VersoRuntime<T>;
 
     fn run_on_main_thread<F: FnOnce() + Send + 'static>(&self, f: F) -> Result<()> {
-        self.context.send_message(Message::Task(Box::new(f)))
+        self.context.run_on_main_thread(f)
     }
 
     /// Unsupported, has no effect when called, the callback will not be called
@@ -1181,7 +1215,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     type WindowBuilder = VersoWindowBuilder;
 
     fn run_on_main_thread<F: FnOnce() + Send + 'static>(&self, f: F) -> Result<()> {
-        self.context.send_message(Message::Task(Box::new(f)))
+        self.context.run_on_main_thread(f)
     }
 
     /// Currently only [`WindowEvent::CloseRequested`] will be emitted
@@ -1312,19 +1346,19 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
         Ok(None)
     }
 
-    /// Unsupported, always returns [`None`]
     fn primary_monitor(&self) -> Result<Option<Monitor>> {
-        Ok(None)
+        self.context
+            .run_on_main_thread_with_event_loop(|e| e.tauri_primary_monitor())
     }
 
-    /// Unsupported, always returns [`None`]
     fn monitor_from_point(&self, x: f64, y: f64) -> Result<Option<Monitor>> {
-        Ok(None)
+        self.context
+            .run_on_main_thread_with_event_loop(move |e| e.tauri_monitor_from_point(x, y))
     }
 
-    /// Unsupported, always returns an empty vector
     fn available_monitors(&self) -> Result<Vec<Monitor>> {
-        Ok(Vec::new())
+        self.context
+            .run_on_main_thread_with_event_loop(|e| e.tauri_available_monitors())
     }
 
     /// Unsupported, always returns [`Theme::Light`]
@@ -1759,19 +1793,20 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
         Err(tauri_runtime::Error::CreateWindow)
     }
 
-    /// Unsupported, always returns [`None`]
     fn primary_monitor(&self) -> Option<Monitor> {
-        None
+        self.event_loop.tauri_primary_monitor()
     }
 
-    /// Unsupported, always returns [`None`]
     fn monitor_from_point(&self, x: f64, y: f64) -> Option<Monitor> {
-        None
+        self.event_loop.tauri_monitor_from_point(x, y)
     }
 
-    /// Unsupported, always returns an empty vector
     fn available_monitors(&self) -> Vec<Monitor> {
-        Vec::new()
+        self.event_loop.tauri_available_monitors()
+    }
+
+    fn cursor_position(&self) -> Result<PhysicalPosition<f64>> {
+        self.event_loop.tauri_cursor_position()
     }
 
     /// Unsupported, has no effect when called
@@ -1825,6 +1860,7 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
                 }
                 TaoEvent::UserEvent(user_event) => match user_event {
                     Message::Task(p) => p(),
+                    Message::TaskWithEventLoop(p) => p(event_loop),
                     Message::CloseWindow(id) => {
                         let should_exit =
                             self.context
@@ -1860,9 +1896,45 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
                 _ => {}
             })
     }
+}
 
-    /// Unsupported, will always return `PhysicalPosition { x: 0, y: 0 }`
-    fn cursor_position(&self) -> Result<PhysicalPosition<f64>> {
-        Ok(PhysicalPosition::default())
+fn tao_monitor_to_tauri_monitor(monitor: tao::monitor::MonitorHandle) -> Monitor {
+    Monitor {
+        name: monitor.name(),
+        position: monitor.position(),
+        scale_factor: monitor.scale_factor(),
+        size: monitor.size(),
+    }
+}
+
+trait TaoEventLoopWindowTargetExt {
+    fn tauri_primary_monitor(&self) -> Option<Monitor>;
+    fn tauri_monitor_from_point(&self, x: f64, y: f64) -> Option<Monitor>;
+    fn tauri_available_monitors(&self) -> Vec<Monitor>;
+    fn tauri_cursor_position(&self) -> Result<PhysicalPosition<f64>>;
+}
+
+impl<T> TaoEventLoopWindowTargetExt for TaoEventLoopWindowTarget<T> {
+    fn tauri_primary_monitor(&self) -> Option<Monitor> {
+        self.primary_monitor().map(tao_monitor_to_tauri_monitor)
+    }
+
+    fn tauri_monitor_from_point(&self, x: f64, y: f64) -> Option<Monitor> {
+        self.monitor_from_point(x, y)
+            .map(tao_monitor_to_tauri_monitor)
+    }
+
+    fn tauri_available_monitors(&self) -> Vec<Monitor> {
+        self.available_monitors()
+            .into_iter()
+            .map(tao_monitor_to_tauri_monitor)
+            .collect()
+    }
+
+    fn tauri_cursor_position(&self) -> Result<PhysicalPosition<f64>> {
+        let position = self
+            .cursor_position()
+            .map_err(|_| Error::FailedToGetCursorPosition)?;
+        Ok(position)
     }
 }
