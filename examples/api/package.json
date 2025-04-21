@@ -10,14 +10,14 @@
 		"@tauri-apps/cli": "^2.5.0",
 		"@types/react": "^19.1.2",
 		"@types/react-dom": "^19.1.2",
-		"@vitejs/plugin-react": "^4.4.0",
+		"@vitejs/plugin-react": "^4.4.1",
 		"prettier": "^3.5.3",
 		"typescript": "~5.8.3",
-		"vite": "^6.2.6"
+		"vite": "^6.3.2"
 	},
 	"dependencies": {
 		"@tauri-apps/api": "^2.5.0",
-		"@tauri-apps/plugin-log": "^2.3.1",
+		"@tauri-apps/plugin-log": "^2.4.0",
 		"@tauri-apps/plugin-opener": "^2.2.6",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0"
