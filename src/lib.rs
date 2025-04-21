@@ -71,8 +71,12 @@
 
 mod event_loop_ext;
 mod runtime;
+mod window;
 
-pub use runtime::*;
+pub use runtime::{
+    EventProxy, RuntimeContext, VersoRuntime, VersoRuntimeHandle, VersoWebviewDispatcher,
+};
+pub use window::{VersoWindowBuilder, VersoWindowDispatcher};
 
 use std::{
     env::current_exe,
