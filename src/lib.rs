@@ -470,6 +470,8 @@ impl<T: UserEvent> RuntimeContext<T> {
             }
         }
 
+        let webview_weak = std::sync::Arc::downgrade(&window.webview);
+
         windows.remove(&id);
         callback(RunEvent::WindowEvent {
             label,
@@ -479,6 +481,16 @@ impl<T: UserEvent> RuntimeContext<T> {
         // This is required becuase tauri puts in a clone of the window in to WindowEventHandler closure,
         // and we need to clear it for the window to drop or else it will stay there forever
         on_window_event_listeners.lock().unwrap().clear();
+
+        if let Some(webview) = webview_weak.upgrade() {
+            log::warn!(
+                "The versoview controller reference count is not 0 on window close, \
+                there're leaks happening, shutting down this versoview instance regardless"
+            );
+            if let Err(error) = webview.lock().unwrap().exit() {
+                log::error!("Failed to exit the webview: {error}");
+            }
+        }
 
         let is_empty = windows.is_empty();
         if !is_empty {
