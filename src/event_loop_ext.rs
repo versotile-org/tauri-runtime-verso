@@ -20,7 +20,6 @@ impl<T> TaoEventLoopWindowTargetExt for TaoEventLoopWindowTarget<T> {
 
     fn tauri_available_monitors(&self) -> Vec<Monitor> {
         self.available_monitors()
-            .into_iter()
             .map(tao_monitor_to_tauri_monitor)
             .collect()
     }
