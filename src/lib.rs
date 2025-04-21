@@ -71,11 +71,11 @@
 
 mod event_loop_ext;
 mod runtime;
+mod webview;
 mod window;
 
-pub use runtime::{
-    EventProxy, RuntimeContext, VersoRuntime, VersoRuntimeHandle, VersoWebviewDispatcher,
-};
+pub use runtime::{EventProxy, RuntimeContext, VersoRuntime, VersoRuntimeHandle};
+pub use webview::VersoWebviewDispatcher;
 pub use window::{VersoWindowBuilder, VersoWindowDispatcher};
 
 use std::{
