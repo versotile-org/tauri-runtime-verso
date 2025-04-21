@@ -31,6 +31,7 @@ use std::{
     borrow::Cow,
     collections::HashMap,
     fmt::{self, Debug},
+    ops::Deref,
     sync::{
         Arc, Mutex,
         atomic::{AtomicU32, Ordering},
@@ -57,6 +58,15 @@ enum Message<T: UserEvent> {
     UserEvent(T),
 }
 
+impl<T: UserEvent> Clone for Message<T> {
+    fn clone(&self) -> Self {
+        match self {
+            Self::UserEvent(t) => Self::UserEvent(t.clone()),
+            _ => unimplemented!(),
+        }
+    }
+}
+
 type WindowEventHandler = Box<dyn Fn(&WindowEvent) + Send>;
 type WindowEventListeners = Arc<Mutex<HashMap<WindowEventId, WindowEventHandler>>>;
 
@@ -67,9 +77,24 @@ struct Window {
 }
 
 #[derive(Clone)]
+pub struct DispatcherMainThreadContext<T: UserEvent> {
+    window_target: TaoEventLoopWindowTarget<Message<T>>,
+}
+
+// SAFETY: we ensure this type is only used on the main thread.
+#[allow(clippy::non_send_fields_in_send_ty)]
+unsafe impl<T: UserEvent> Send for DispatcherMainThreadContext<T> {}
+
+// SAFETY: we ensure this type is only used on the main thread.
+#[allow(clippy::non_send_fields_in_send_ty)]
+unsafe impl<T: UserEvent> Sync for DispatcherMainThreadContext<T> {}
+
+#[derive(Clone)]
 pub struct RuntimeContext<T: UserEvent> {
     windows: Arc<Mutex<HashMap<WindowId, Window>>>,
     event_proxy: TaoEventLoopProxy<Message<T>>,
+    // This must only be used on main thread
+    main_thread: DispatcherMainThreadContext<T>,
     main_thread_id: ThreadId,
     next_window_id: Arc<AtomicU32>,
     next_webview_id: Arc<AtomicU32>,
@@ -80,9 +105,16 @@ pub struct RuntimeContext<T: UserEvent> {
 impl<T: UserEvent> RuntimeContext<T> {
     fn send_message(&self, message: Message<T>) -> Result<()> {
         if current_thread().id() == self.main_thread_id {
-            if let Message::Task(task) = message {
-                task();
-                return Ok(());
+            match message {
+                Message::Task(task) => {
+                    task();
+                    return Ok(());
+                }
+                Message::TaskWithEventLoop(task) => {
+                    task(&self.main_thread.window_target);
+                    return Ok(());
+                }
+                _ => {}
             }
         }
         self.event_proxy
@@ -1542,6 +1574,9 @@ impl<T: UserEvent> VersoRuntime<T> {
         let context = RuntimeContext {
             windows: Default::default(),
             event_proxy: event_loop.create_proxy(),
+            main_thread: DispatcherMainThreadContext {
+                window_target: event_loop.deref().clone(),
+            },
             main_thread_id: current_thread().id(),
             next_window_id: Default::default(),
             next_webview_id: Default::default(),
