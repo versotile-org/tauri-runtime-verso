@@ -594,6 +594,30 @@ impl<T: UserEvent> VersoRuntime<T> {
             event_loop,
         }
     }
+
+    fn init_with_builder(
+        mut event_loop_builder: EventLoopBuilder<Message<T>>,
+        args: RuntimeInitArgs,
+    ) -> Self {
+        #[cfg(windows)]
+        if let Some(hook) = args.msg_hook {
+            use tao::platform::windows::EventLoopBuilderExtWindows;
+            event_loop_builder.with_msg_hook(hook);
+        }
+
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        ))]
+        if let Some(app_id) = args.app_id {
+            use tao::platform::unix::EventLoopBuilderExtUnix;
+            event_loop_builder.with_app_id(app_id);
+        }
+        Self::init(event_loop_builder.build())
+    }
 }
 
 impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
@@ -602,22 +626,24 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
     type Handle = VersoRuntimeHandle<T>;
     type EventLoopProxy = EventProxy<T>;
 
-    /// `args` not supported
-    fn new(_args: RuntimeInitArgs) -> Result<Self> {
-        let mut event_loop_builder = EventLoopBuilder::<Message<T>>::with_user_event();
-        Ok(Self::init(event_loop_builder.build()))
+    /// `args.msg_hook` hooks on the event loop of this process,
+    /// this doesn't work for the event loop of versoview instances
+    fn new(args: RuntimeInitArgs) -> Result<Self> {
+        let event_loop_builder = EventLoopBuilder::<Message<T>>::with_user_event();
+        Ok(Self::init_with_builder(event_loop_builder, args))
     }
 
-    /// `args` not supported
+    /// `args.msg_hook` hooks on the event loop of this process,
+    /// this doesn't work for the event loop of versoview instances
     #[cfg(any(windows, target_os = "linux"))]
-    fn new_any_thread(_args: RuntimeInitArgs) -> Result<Self> {
+    fn new_any_thread(args: RuntimeInitArgs) -> Result<Self> {
         let mut event_loop_builder = EventLoopBuilder::<Message<T>>::with_user_event();
         #[cfg(target_os = "linux")]
         use tao::platform::unix::EventLoopBuilderExtUnix;
         #[cfg(windows)]
         use tao::platform::windows::EventLoopBuilderExtWindows;
         event_loop_builder.with_any_thread(true);
-        Ok(Self::init(event_loop_builder.build()))
+        Ok(Self::init_with_builder(event_loop_builder, args))
     }
 
     fn create_proxy(&self) -> EventProxy<T> {
