@@ -1,6 +1,6 @@
 # Tauri Runtime Verso
 
-A tauri runtime to replace the backend with [Verso](https://github.com/versotile-org/verso)
+A tauri runtime to replace the backend with [Verso](https://github.com/tauri-apps/verso)
 
 > Currently still working in progress
 

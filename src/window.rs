@@ -37,6 +37,7 @@ pub(crate) struct Window {
 #[derive(Debug, Clone)]
 pub struct VersoWindowBuilder {
     pub verso_builder: VersoBuilder,
+    pub has_icon: bool,
 }
 
 impl Default for VersoWindowBuilder {
@@ -52,7 +53,10 @@ impl Default for VersoWindowBuilder {
         verso_builder = verso_builder.decorated(true);
         // Default `transparent` to `false` to align with the wry runtime
         verso_builder = verso_builder.transparent(false);
-        Self { verso_builder }
+        Self {
+            verso_builder,
+            has_icon: false,
+        }
     }
 }
 
@@ -80,7 +84,10 @@ impl WindowBuilder for VersoWindowBuilder {
             verso_builder = verso_builder.position(LogicalPosition::new(x, y));
         };
 
-        Self { verso_builder }
+        Self {
+            verso_builder,
+            has_icon: false,
+        }
     }
 
     /// Unsupported, has no effect
@@ -190,8 +197,13 @@ impl WindowBuilder for VersoWindowBuilder {
         self
     }
 
-    /// Unsupported, has no effect
-    fn icon(self, icon: Icon<'_>) -> Result<Self> {
+    fn icon(mut self, icon: Icon<'_>) -> Result<Self> {
+        self.verso_builder = self.verso_builder.icon(verso::Icon {
+            rgba: icon.rgba.to_vec(),
+            width: icon.width,
+            height: icon.height,
+        });
+        self.has_icon = true;
         Ok(self)
     }
 
@@ -263,9 +275,8 @@ impl WindowBuilder for VersoWindowBuilder {
         self
     }
 
-    /// Unsupported, always returns false
     fn has_icon(&self) -> bool {
-        false
+        self.has_icon
     }
 
     /// Unsupported, always returns [`None`]
@@ -360,24 +371,32 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
             .map_err(|_| Error::FailedToSendMessage)
     }
 
-    /// Always return `PhysicalPosition { x: 0, y: 0 }` on Wayland
+    /// Returns the position of the top-left hand corner of the window's client area relative to the top-left hand corner of the desktop.
+    ///
+    /// ## Platform-specific
+    ///
+    /// **Wayland**: always return `PhysicalPosition { x: 0, y: 0 }`
     fn inner_position(&self) -> Result<PhysicalPosition<i32>> {
         Ok(self
             .webview
             .lock()
             .unwrap()
-            .get_position()
+            .get_inner_position()
             .map_err(|_| Error::FailedToSendMessage)?
             .unwrap_or_default())
     }
 
-    /// Always return `PhysicalPosition { x: 0, y: 0 }` on Wayland
+    /// Returns the position of the top-left hand corner of the window relative to the top-left hand corner of the desktop.
+    ///
+    /// ## Platform-specific
+    ///
+    /// **Wayland**: always return `PhysicalPosition { x: 0, y: 0 }`
     fn outer_position(&self) -> Result<PhysicalPosition<i32>> {
         Ok(self
             .webview
             .lock()
             .unwrap()
-            .get_position()
+            .get_outer_position()
             .map_err(|_| Error::FailedToSendMessage)?
             .unwrap_or_default())
     }
@@ -386,7 +405,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
         self.webview
             .lock()
             .unwrap()
-            .get_size()
+            .get_inner_size()
             .map_err(|_| Error::FailedToSendMessage)
     }
 
@@ -394,7 +413,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
         self.webview
             .lock()
             .unwrap()
-            .get_size()
+            .get_outer_size()
             .map_err(|_| Error::FailedToSendMessage)
     }
 
@@ -700,8 +719,12 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
         Ok(())
     }
 
-    /// Unsupported, has no effect when called
     fn set_focus(&self) -> Result<()> {
+        self.webview
+            .lock()
+            .unwrap()
+            .focus()
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
