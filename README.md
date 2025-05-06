@@ -79,6 +79,12 @@ Then go to `about:debugging` in Firefox and connect to `localhost:1234` there
 
 ## Known limitations
 
+### Security
+
+We currently hard coded the `Origin` header for the custom protocol IPC to work, but this means Tauri won't be able to check for if the URL is a remote URL or a local one for the capabilities, so right now, please don't use this to load arbitrary websites if you have related settings
+
+### Menus
+
 Currently, only the app wide menus on macOS are supported, per window menus are not supported yet
 
 For more, checkout the [documentation](https://versotile-org.github.io/tauri-runtime-verso/tauri_runtime_verso)
