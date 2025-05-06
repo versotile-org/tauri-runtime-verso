@@ -203,9 +203,18 @@ impl<T: UserEvent> RuntimeContext<T> {
                 // TODO: Servo's EmbedderMsg::WebResourceRequested message is sent too early
                 // that it doesn't include Origin header, so I hard coded this for now
                 if !request.headers().contains_key("Origin") {
-                    request
-                        .headers_mut()
-                        .insert("Origin", "http://tauri.localhost/".parse().unwrap());
+                    #[cfg(windows)]
+                    let uri = {
+                        let scheme = if pending_webview.webview_attributes.use_https_scheme {
+                            "https"
+                        } else {
+                            "http"
+                        };
+                        format!("{scheme}://tauri.localhost")
+                    };
+                    #[cfg(not(windows))]
+                    let uri = "tauri://localhost";
+                    request.headers_mut().insert("Origin", uri.parse().unwrap());
                 }
                 for (scheme, handler) in &uri_scheme_protocols {
                     // Since servo doesn't support body in its EmbedderMsg::WebResourceRequested yet,
