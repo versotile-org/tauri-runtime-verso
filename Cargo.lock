@@ -4569,8 +4569,8 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "verso"
-version = "0.0.2"
-source = "git+https://github.com/versotile-org/verso?rev=a3b24752b1931a5bf6feafe934cf03840511de58#a3b24752b1931a5bf6feafe934cf03840511de58"
+version = "0.0.3"
+source = "git+https://github.com/tauri-apps/verso?rev=97e9b2f220893407e02c8b54c6d747f8e13939ed#97e9b2f220893407e02c8b54c6d747f8e13939ed"
 dependencies = [
  "bincode",
  "dpi",
@@ -4586,13 +4586,13 @@ dependencies = [
 
 [[package]]
 name = "versoview_build"
-version = "0.0.2"
-source = "git+https://github.com/versotile-org/verso?rev=a3b24752b1931a5bf6feafe934cf03840511de58#a3b24752b1931a5bf6feafe934cf03840511de58"
+version = "0.0.3"
+source = "git+https://github.com/tauri-apps/verso?rev=97e9b2f220893407e02c8b54c6d747f8e13939ed#97e9b2f220893407e02c8b54c6d747f8e13939ed"
 
 [[package]]
 name = "versoview_messages"
 version = "0.0.1"
-source = "git+https://github.com/versotile-org/verso?rev=a3b24752b1931a5bf6feafe934cf03840511de58#a3b24752b1931a5bf6feafe934cf03840511de58"
+source = "git+https://github.com/tauri-apps/verso?rev=97e9b2f220893407e02c8b54c6d747f8e13939ed#97e9b2f220893407e02c8b54c6d747f8e13939ed"
 dependencies = [
  "dpi",
  "headers",
@@ -4860,7 +4860,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]

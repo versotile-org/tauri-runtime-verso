@@ -20,6 +20,7 @@ use tauri_runtime::{
 };
 use tauri_utils::Theme;
 use url::Url;
+use verso::CustomProtocolBuilder;
 
 use std::{
     borrow::Cow,
@@ -181,6 +182,12 @@ impl<T: UserEvent> RuntimeContext<T> {
                     .into_iter()
                     .map(|script| script.script),
             )
+            .custom_protocols(
+                pending_webview
+                    .uri_scheme_protocols
+                    .keys()
+                    .map(CustomProtocolBuilder::new),
+            )
             .build(get_verso_path(), Url::parse(&pending_webview.url).unwrap());
 
         let webview_label = label.clone();
@@ -195,25 +202,32 @@ impl<T: UserEvent> RuntimeContext<T> {
                 // dbg!(&request);
                 // TODO: Servo's EmbedderMsg::WebResourceRequested message is sent too early
                 // that it doesn't include Origin header, so I hard coded this for now
-                if !request.request.headers().contains_key("Origin") {
-                    request
-                        .request
-                        .headers_mut()
-                        .insert("Origin", "http://tauri.localhost/".parse().unwrap());
+                if !request.headers().contains_key("Origin") {
+                    #[cfg(windows)]
+                    let uri = {
+                        let scheme = if pending_webview.webview_attributes.use_https_scheme {
+                            "https"
+                        } else {
+                            "http"
+                        };
+                        format!("{scheme}://tauri.localhost")
+                    };
+                    #[cfg(not(windows))]
+                    let uri = "tauri://localhost";
+                    request.headers_mut().insert("Origin", uri.parse().unwrap());
                 }
                 for (scheme, handler) in &uri_scheme_protocols {
                     // Since servo doesn't support body in its EmbedderMsg::WebResourceRequested yet,
                     // we use a header instead for now
                     if scheme == "ipc" {
                         if let Some(data) = request
-                            .request
                             .headers_mut()
                             .remove("Tauri-VersoRuntime-Invoke-Body")
                         {
                             if let Ok(body) =
                                 percent_encoding::percent_decode(data.as_bytes()).decode_utf8()
                             {
-                                *request.request.body_mut() = body.as_bytes().to_vec();
+                                *request.body_mut() = body.as_bytes().to_vec();
                             } else {
                                 log::error!("IPC invoke body header is not a valid UTF-8 string");
                             }
@@ -221,7 +235,7 @@ impl<T: UserEvent> RuntimeContext<T> {
                     }
                     #[cfg(windows)]
                     let (uri, http_or_https) = (
-                        request.request.uri().to_string(),
+                        request.uri().to_string(),
                         if pending_webview.webview_attributes.use_https_scheme {
                             "https"
                         } else {
@@ -231,14 +245,14 @@ impl<T: UserEvent> RuntimeContext<T> {
                     #[cfg(windows)]
                     let is_custom_protocol_uri = is_work_around_uri(&uri, http_or_https, scheme);
                     #[cfg(not(windows))]
-                    let is_custom_protocol_uri = request.request.uri().scheme_str() == Some(scheme);
+                    let is_custom_protocol_uri = request.uri().scheme_str() == Some(scheme);
                     if is_custom_protocol_uri {
                         #[cfg(windows)]
                         {
                             if let Ok(reverted) =
                                 revert_custom_protocol_work_around(&uri, http_or_https, scheme)
                             {
-                                *request.request.uri_mut() = reverted
+                                *request.uri_mut() = reverted
                             } else {
                                 log::error!("Can't revert the URI work around on: {uri}")
                             };
@@ -249,7 +263,7 @@ impl<T: UserEvent> RuntimeContext<T> {
                         let _ = sender.send_event(Message::Task(Box::new(move || {
                             handler(
                                 &webview_label,
-                                request.request,
+                                request,
                                 Box::new(move |response| {
                                     response_fn(Some(response.map(Cow::into_owned)));
                                 }),

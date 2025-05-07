@@ -90,7 +90,7 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher<T> {
             .webview
             .lock()
             .unwrap()
-            .get_size()
+            .get_inner_size()
             .map_err(|_| Error::FailedToSendMessage)?;
         Ok(size)
     }
@@ -192,8 +192,12 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher<T> {
         Ok(false)
     }
 
-    /// Unsupported, has no effect when called
     fn reload(&self) -> Result<()> {
+        self.webview
+            .lock()
+            .unwrap()
+            .reload()
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
