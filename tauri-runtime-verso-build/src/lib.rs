@@ -39,8 +39,12 @@ pub fn get_verso_as_external_bin() -> io::Result<()> {
 
     let extension = if cfg!(windows) { ".exe" } else { "" };
     let output_executable = output_directory.join(format!("versoview-{target_triple}{extension}"));
+    let output_version = output_directory.join("versoview-version.txt");
 
-    if std::fs::exists(&output_executable)? {
+    if std::fs::exists(&output_executable)?
+        && std::fs::read_to_string(&output_version).unwrap_or_default()
+            == versoview_build::VERSO_VERSION
+    {
         return Ok(());
     }
 
@@ -48,8 +52,10 @@ pub fn get_verso_as_external_bin() -> io::Result<()> {
 
     let extracted_versoview_path = output_directory.join(format!("versoview{extension}"));
     std::fs::rename(extracted_versoview_path, &output_executable)?;
+    std::fs::write(&output_version, versoview_build::VERSO_VERSION)?;
 
     println!("cargo:rerun-if-changed={}", output_executable.display());
+    println!("cargo:rerun-if-changed={}", output_version.display());
 
     Ok(())
 }
