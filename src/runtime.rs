@@ -743,55 +743,62 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
 
     fn run_return<F: FnMut(RunEvent<T>) + 'static>(mut self, mut callback: F) -> i32 {
         self.event_loop
-            .run_return(|event, event_loop, control_flow| match event {
-                TaoEvent::NewEvents(StartCause::Init) => {
-                    callback(RunEvent::Ready);
+            .run_return(|event, event_loop, control_flow| {
+                if *control_flow != ControlFlow::Exit {
+                    *control_flow = ControlFlow::Wait;
                 }
-                TaoEvent::NewEvents(StartCause::Poll) => {
-                    callback(RunEvent::Resumed);
-                }
-                TaoEvent::MainEventsCleared => {
-                    callback(RunEvent::MainEventsCleared);
-                }
-                TaoEvent::LoopDestroyed => {
-                    callback(RunEvent::Exit);
-                }
-                TaoEvent::UserEvent(user_event) => match user_event {
-                    Message::Task(p) => p(),
-                    Message::TaskWithEventLoop(p) => p(event_loop),
-                    Message::CloseWindow(id) => {
-                        let should_exit =
-                            self.context
-                                .handle_close_window_request(&mut callback, id, false);
-                        if should_exit {
-                            *control_flow = ControlFlow::Exit;
-                        }
-                    }
-                    Message::DestroyWindow(id) => {
-                        let should_exit =
-                            self.context
-                                .handle_close_window_request(&mut callback, id, true);
-                        if should_exit {
-                            *control_flow = ControlFlow::Exit;
-                        }
-                    }
-                    Message::RequestExit(code) => {
-                        let (tx, rx) = channel();
-                        callback(RunEvent::ExitRequested {
-                            code: Some(code),
-                            tx,
-                        });
 
-                        let recv = rx.try_recv();
-                        let should_prevent = matches!(recv, Ok(ExitRequestedEventAction::Prevent));
-
-                        if !should_prevent {
-                            *control_flow = ControlFlow::Exit;
-                        }
+                match event {
+                    TaoEvent::NewEvents(StartCause::Init) => {
+                        callback(RunEvent::Ready);
                     }
-                    Message::UserEvent(user_event) => callback(RunEvent::UserEvent(user_event)),
-                },
-                _ => {}
+                    TaoEvent::NewEvents(StartCause::Poll) => {
+                        callback(RunEvent::Resumed);
+                    }
+                    TaoEvent::MainEventsCleared => {
+                        callback(RunEvent::MainEventsCleared);
+                    }
+                    TaoEvent::LoopDestroyed => {
+                        callback(RunEvent::Exit);
+                    }
+                    TaoEvent::UserEvent(user_event) => match user_event {
+                        Message::Task(p) => p(),
+                        Message::TaskWithEventLoop(p) => p(event_loop),
+                        Message::CloseWindow(id) => {
+                            let should_exit =
+                                self.context
+                                    .handle_close_window_request(&mut callback, id, false);
+                            if should_exit {
+                                *control_flow = ControlFlow::Exit;
+                            }
+                        }
+                        Message::DestroyWindow(id) => {
+                            let should_exit =
+                                self.context
+                                    .handle_close_window_request(&mut callback, id, true);
+                            if should_exit {
+                                *control_flow = ControlFlow::Exit;
+                            }
+                        }
+                        Message::RequestExit(code) => {
+                            let (tx, rx) = channel();
+                            callback(RunEvent::ExitRequested {
+                                code: Some(code),
+                                tx,
+                            });
+
+                            let recv = rx.try_recv();
+                            let should_prevent =
+                                matches!(recv, Ok(ExitRequestedEventAction::Prevent));
+
+                            if !should_prevent {
+                                *control_flow = ControlFlow::Exit;
+                            }
+                        }
+                        Message::UserEvent(user_event) => callback(RunEvent::UserEvent(user_event)),
+                    },
+                    _ => {}
+                }
             })
     }
 }
