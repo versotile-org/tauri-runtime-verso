@@ -177,13 +177,21 @@ impl WindowBuilder for VersoWindowBuilder {
         self
     }
 
-    /// Unsupported, has no effect
-    fn always_on_bottom(self, always_on_bottom: bool) -> Self {
+    fn always_on_bottom(mut self, always_on_bottom: bool) -> Self {
+        self.verso_builder = self.verso_builder.window_level(if always_on_bottom {
+            verso::WindowLevel::AlwaysOnTop
+        } else {
+            verso::WindowLevel::Normal
+        });
         self
     }
 
-    /// Unsupported, has no effect
-    fn always_on_top(self, always_on_top: bool) -> Self {
+    fn always_on_top(mut self, always_on_top: bool) -> Self {
+        self.verso_builder = self.verso_builder.window_level(if always_on_top {
+            verso::WindowLevel::AlwaysOnTop
+        } else {
+            verso::WindowLevel::Normal
+        });
         self
     }
 
@@ -479,9 +487,13 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
             .map_err(|_| Error::FailedToSendMessage)
     }
 
-    /// Unsupported, always returns empty string
     fn title(&self) -> Result<String> {
-        Ok(String::new())
+        Ok(self
+            .webview
+            .lock()
+            .unwrap()
+            .get_title()
+            .map_err(|_| Error::FailedToSendMessage)?)
     }
 
     /// Unsupported, always returns [`None`]
@@ -583,8 +595,12 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
         Ok(())
     }
 
-    /// Unsupported, has no effect when called
     fn set_title<S: Into<String>>(&self, title: S) -> Result<()> {
+        self.webview
+            .lock()
+            .unwrap()
+            .set_title(title)
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
@@ -662,13 +678,29 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
         Ok(())
     }
 
-    /// Unsupported, has no effect when called
     fn set_always_on_bottom(&self, always_on_bottom: bool) -> Result<()> {
+        self.webview
+            .lock()
+            .unwrap()
+            .set_window_level(if always_on_bottom {
+                verso::WindowLevel::AlwaysOnBottom
+            } else {
+                verso::WindowLevel::Normal
+            })
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
-    /// Unsupported, has no effect when called
     fn set_always_on_top(&self, always_on_top: bool) -> Result<()> {
+        self.webview
+            .lock()
+            .unwrap()
+            .set_window_level(if always_on_top {
+                verso::WindowLevel::AlwaysOnTop
+            } else {
+                verso::WindowLevel::Normal
+            })
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 
