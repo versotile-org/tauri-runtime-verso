@@ -24,8 +24,11 @@ use std::{
 };
 
 use crate::{
-    RuntimeContext, VersoRuntime, event_loop_ext::TaoEventLoopWindowTargetExt,
-    get_verso_devtools_port, get_verso_resource_directory, runtime::Message,
+    RuntimeContext, VersoRuntime,
+    event_loop_ext::TaoEventLoopWindowTargetExt,
+    get_verso_devtools_port, get_verso_resource_directory,
+    runtime::Message,
+    utils::{from_verso_theme, to_verso_theme},
 };
 
 pub(crate) struct Window {
@@ -38,6 +41,7 @@ pub(crate) struct Window {
 pub struct VersoWindowBuilder {
     pub verso_builder: VersoBuilder,
     pub has_icon: bool,
+    pub theme: Option<Theme>,
 }
 
 impl Default for VersoWindowBuilder {
@@ -56,6 +60,7 @@ impl Default for VersoWindowBuilder {
         Self {
             verso_builder,
             has_icon: false,
+            theme: None,
         }
     }
 }
@@ -84,9 +89,14 @@ impl WindowBuilder for VersoWindowBuilder {
             verso_builder = verso_builder.position(LogicalPosition::new(x, y));
         };
 
+        if let Some(theme) = config.theme {
+            verso_builder = verso_builder.theme(to_verso_theme(theme));
+        }
+
         Self {
             verso_builder,
             has_icon: false,
+            theme: None,
         }
     }
 
@@ -278,8 +288,11 @@ impl WindowBuilder for VersoWindowBuilder {
         self
     }
 
-    /// Unsupported, has no effect
-    fn theme(self, theme: Option<Theme>) -> Self {
+    fn theme(mut self, theme: Option<Theme>) -> Self {
+        if let Some(theme) = theme {
+            self.verso_builder = self.verso_builder.theme(to_verso_theme(theme));
+            self.theme = Some(theme);
+        }
         self
     }
 
@@ -287,9 +300,8 @@ impl WindowBuilder for VersoWindowBuilder {
         self.has_icon
     }
 
-    /// Unsupported, always returns [`None`]
     fn get_theme(&self) -> Option<Theme> {
-        None
+        self.theme
     }
 
     /// Unsupported, has no effect
@@ -516,9 +528,14 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
             .run_on_main_thread_with_event_loop(|e| e.tauri_available_monitors())
     }
 
-    /// Unsupported, always returns [`Theme::Light`]
     fn theme(&self) -> Result<Theme> {
-        Ok(Theme::Light)
+        let theme = self
+            .webview
+            .lock()
+            .unwrap()
+            .get_theme()
+            .map_err(|_| Error::FailedToSendMessage)?;
+        Ok(from_verso_theme(theme))
     }
 
     /// Unsupported, panics when called
@@ -842,8 +859,12 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
         Ok(())
     }
 
-    /// Unsupported, has no effect when called
     fn set_theme(&self, theme: Option<Theme>) -> Result<()> {
+        self.webview
+            .lock()
+            .unwrap()
+            .set_theme(theme.map(to_verso_theme))
+            .map_err(|_| Error::FailedToSendMessage)?;
         Ok(())
     }
 

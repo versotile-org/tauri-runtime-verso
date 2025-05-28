@@ -15,7 +15,8 @@ use tauri_runtime::{
     monitor::Monitor,
     webview::{DetachedWebview, PendingWebview},
     window::{
-        DetachedWindow, DetachedWindowWebview, PendingWindow, RawWindow, WindowEvent, WindowId,
+        DetachedWindow, DetachedWindowWebview, PendingWindow, RawWindow, WindowBuilder,
+        WindowEvent, WindowId,
     },
 };
 use tauri_utils::Theme;
@@ -38,6 +39,7 @@ use std::{
 use crate::{
     event_loop_ext::TaoEventLoopWindowTargetExt,
     get_verso_path,
+    utils::{to_tao_theme, to_verso_theme},
     webview::VersoWebviewDispatcher,
     window::{VersoWindowDispatcher, Window},
 };
@@ -80,6 +82,7 @@ unsafe impl<T: UserEvent> Sync for DispatcherMainThreadContext<T> {}
 #[derive(Clone)]
 pub struct RuntimeContext<T: UserEvent> {
     windows: Arc<Mutex<HashMap<WindowId, Window>>>,
+    prefered_theme: Arc<Mutex<Option<Theme>>>,
     event_proxy: TaoEventLoopProxy<Message<T>>,
     // This must only be used on main thread
     main_thread: DispatcherMainThreadContext<T>,
@@ -172,8 +175,13 @@ impl<T: UserEvent> RuntimeContext<T> {
         let window_id = self.next_window_id();
         let webview_id = self.next_webview_id();
 
-        let webview = pending
-            .window_builder
+        let mut window_builder = pending.window_builder;
+
+        if window_builder.get_theme().is_none() {
+            window_builder = window_builder.theme(*self.prefered_theme.lock().unwrap());
+        }
+
+        let webview = window_builder
             .verso_builder
             .user_scripts(
                 pending_webview
@@ -527,8 +535,22 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
             .run_on_main_thread_with_event_loop(|e| e.tauri_cursor_position())?
     }
 
-    /// Unsupported, has no effect when called
-    fn set_theme(&self, theme: Option<Theme>) {}
+    fn set_theme(&self, theme: Option<Theme>) {
+        *self.context.prefered_theme.lock().unwrap() = theme;
+        for window in self.context.windows.lock().unwrap().values() {
+            if let Err(error) = window
+                .webview
+                .lock()
+                .unwrap()
+                .set_theme(theme.map(to_verso_theme))
+            {
+                log::error!("Failed to set the theme for webview: {error}");
+            }
+        }
+        let _ = self
+            .context
+            .run_on_main_thread_with_event_loop(move |e| e.set_theme(theme.map(to_tao_theme)));
+    }
 
     /// Unsupported, has no effect
     #[cfg(target_os = "macos")]
@@ -593,6 +615,7 @@ impl<T: UserEvent> VersoRuntime<T> {
     fn init(event_loop: EventLoop<Message<T>>) -> Self {
         let context = RuntimeContext {
             windows: Default::default(),
+            prefered_theme: Arc::default(),
             event_proxy: event_loop.create_proxy(),
             main_thread: DispatcherMainThreadContext {
                 window_target: event_loop.deref().clone(),
@@ -707,8 +730,20 @@ impl<T: UserEvent> Runtime<T> for VersoRuntime<T> {
         self.event_loop.tauri_cursor_position()
     }
 
-    /// Unsupported, has no effect when called
-    fn set_theme(&self, theme: Option<Theme>) {}
+    fn set_theme(&self, theme: Option<Theme>) {
+        *self.context.prefered_theme.lock().unwrap() = theme;
+        for window in self.context.windows.lock().unwrap().values() {
+            if let Err(error) = window
+                .webview
+                .lock()
+                .unwrap()
+                .set_theme(theme.map(to_verso_theme))
+            {
+                log::error!("Failed to set the theme for webview: {error}");
+            }
+        }
+        self.event_loop.set_theme(theme.map(to_tao_theme));
+    }
 
     /// Unsupported, has no effect when called
     #[cfg(target_os = "macos")]
