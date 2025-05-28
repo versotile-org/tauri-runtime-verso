@@ -73,6 +73,7 @@ mod event_loop_ext;
 mod runtime;
 mod webview;
 mod window;
+mod utils;
 
 pub use runtime::{EventProxy, RuntimeContext, VersoRuntime, VersoRuntimeHandle};
 pub use webview::VersoWebviewDispatcher;
