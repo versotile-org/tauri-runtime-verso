@@ -2,7 +2,9 @@
 
 A tauri runtime to replace the backend with [Verso](https://github.com/tauri-apps/verso)
 
-> Currently still working in progress
+## What is Verso
+
+[Verso](https://github.com/tauri-apps/verso) is a browser built on top of the [Servo](https://servo.org/) browser engine, and in our case, we use it as a webview. The reason for this is because the Servo embedding APIs are quite low level and requires the user (embedder) to send everything about the system to drive it, and with Verso, we provide Servo with these things under the hood, then expose some higher level APIs so that you can just let it run and only control it when you need something, this is similar to the [windowed vs visual hosting mode](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/windowed-vs-visual-hosting) of [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2) except for when using Servo directly, you'll need to pass in more than just user inputs
 
 ## Usage
 
@@ -53,7 +55,7 @@ fn main() {
 }
 ```
 
-For more, take a look at the [hello world example](examples/helloworld), or a more sophisticated [api example](examples/api) show casing how you can use [`React`](https://react.dev/) in it and how to bundle the versoview executable and resource directory with `tauri-cli`'s bundler feature so you can actually easily distribute your app
+For more, take a look at the [hello world example](examples/helloworld), or a more sophisticated [api example](examples/api) show casing how you can use [`React`](https://react.dev/), tauri plugins, and tray icons with it
 
 Also, you can checkout the [documentation](https://versotile-org.github.io/tauri-runtime-verso/tauri_runtime_verso)
 
