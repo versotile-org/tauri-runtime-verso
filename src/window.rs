@@ -500,8 +500,7 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn title(&self) -> Result<String> {
-        self
-            .webview
+        self.webview
             .lock()
             .unwrap()
             .get_title()
