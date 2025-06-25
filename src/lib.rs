@@ -70,10 +70,11 @@
 //! - **macos-private-api**: Matching with Tauri's macos-private-api feature, required if you use that
 
 mod event_loop_ext;
+mod monitor;
 mod runtime;
+mod utils;
 mod webview;
 mod window;
-mod utils;
 
 pub use runtime::{EventProxy, RuntimeContext, VersoRuntime, VersoRuntimeHandle};
 pub use webview::VersoWebviewDispatcher;

@@ -13,6 +13,7 @@ tauri = { version = "2", default-features = false, features = [
     # "wry",
     # "compression",
     "common-controls-v6",
+    "x11",
     # Additional features
     # "tray-icon",
 ] }
