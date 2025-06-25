@@ -74,8 +74,8 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher<T> {
             .to_string())
     }
 
-    fn bounds(&self) -> Result<tauri_runtime::Rect> {
-        Ok(tauri_runtime::Rect {
+    fn bounds(&self) -> Result<tauri_runtime::dpi::Rect> {
+        Ok(tauri_runtime::dpi::Rect {
             position: self.position()?.into(),
             size: self.size()?.into(),
         })
@@ -119,7 +119,7 @@ impl<T: UserEvent> WebviewDispatch<T> for VersoWebviewDispatcher<T> {
     /// Unsupported, has no effect when called,
     /// the versoview controls both the webview and the window
     /// use the method from the parent window instead
-    fn set_bounds(&self, bounds: tauri_runtime::Rect) -> Result<()> {
+    fn set_bounds(&self, bounds: tauri_runtime::dpi::Rect) -> Result<()> {
         Ok(())
     }
 

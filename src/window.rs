@@ -500,12 +500,11 @@ impl<T: UserEvent> WindowDispatch<T> for VersoWindowDispatcher<T> {
     }
 
     fn title(&self) -> Result<String> {
-        Ok(self
-            .webview
+        self.webview
             .lock()
             .unwrap()
             .get_title()
-            .map_err(|_| Error::FailedToSendMessage)?)
+            .map_err(|_| Error::FailedToSendMessage)
     }
 
     /// Unsupported, always returns [`None`]

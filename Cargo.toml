@@ -21,10 +21,10 @@ macos-private-api = ["tauri-runtime/macos-private-api"]
 
 [dependencies]
 verso = { workspace = true }
-tauri = { version = "=2.5.1", default-features = false }
-tauri-runtime = "=2.6.0"
-tauri-utils = "=2.4.0"
-tao = "0.33"
+tauri = { version = "=2.6.0", default-features = false }
+tauri-runtime = "=2.7.0"
+tauri-utils = "=2.5.0"
+tao = "0.34"
 raw-window-handle = "0.6"
 url = "2"
 http = "1"
@@ -36,6 +36,9 @@ windows = "0.61"
 
 [target."cfg(any(target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\"))".dependencies]
 gtk = { version = "0.18", features = ["v3_24"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2-app-kit = { version = "0.3", features = ["NSScreen"] }
 
 [patch."https://github.com/tauri-apps/verso"]
 # verso = { path = "../verso/verso" }

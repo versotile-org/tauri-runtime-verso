@@ -1,6 +1,8 @@
 use tao::event_loop::EventLoopWindowTarget as TaoEventLoopWindowTarget;
 use tauri_runtime::{Error, Result, dpi::PhysicalPosition, monitor::Monitor};
 
+use crate::monitor::MonitorExt;
+
 pub trait TaoEventLoopWindowTargetExt {
     fn tauri_primary_monitor(&self) -> Option<Monitor>;
     fn tauri_monitor_from_point(&self, x: f64, y: f64) -> Option<Monitor>;
@@ -34,6 +36,7 @@ impl<T> TaoEventLoopWindowTargetExt for TaoEventLoopWindowTarget<T> {
 
 pub fn tao_monitor_to_tauri_monitor(monitor: tao::monitor::MonitorHandle) -> Monitor {
     Monitor {
+        work_area: monitor.work_area(),
         name: monitor.name(),
         position: monitor.position(),
         scale_factor: monitor.scale_factor(),
