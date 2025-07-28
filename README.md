@@ -17,7 +17,7 @@ To get started, you need to add this crate to your project, and use `default-fea
 
   [dependencies]
 - tauri = { version = "2", features = [] }
-+ tauri = { version = "2", default-features = false, features = ["common-controls-v6", "x11] }
++ tauri = { version = "2", default-features = false, features = ["common-controls-v6", "x11"] }
 + tauri-runtime-verso = { git = "https://github.com/versotile-org/tauri-runtime-verso.git" }
 ```
 
