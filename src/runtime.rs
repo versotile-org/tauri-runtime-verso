@@ -567,7 +567,8 @@ impl<T: UserEvent> RuntimeHandle<T> for VersoRuntimeHandle<T> {
     /// Unsupported, will always return an error
     fn display_handle(
         &self,
-    ) -> std::result::Result<raw_window_handle::DisplayHandle, raw_window_handle::HandleError> {
+    ) -> std::result::Result<raw_window_handle::DisplayHandle<'_>, raw_window_handle::HandleError>
+    {
         Err(raw_window_handle::HandleError::NotSupported)
     }
 
