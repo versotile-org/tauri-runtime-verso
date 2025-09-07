@@ -34,12 +34,17 @@ pub use versoview_build;
 /// to `./versoview/versoview(.exe)` relative to the directory containing your `Cargo.toml` file
 pub fn get_verso_as_external_bin() -> io::Result<()> {
     let target_triple = std::env::var("TARGET").unwrap();
+    let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     let project_directory = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let output_directory = PathBuf::from(project_directory).join("versoview");
 
     let extension = if cfg!(windows) { ".exe" } else { "" };
     let output_executable = output_directory.join(format!("versoview-{target_triple}{extension}"));
     let output_version = output_directory.join("versoview-version.txt");
+
+    if target_os == "android" || target_os == "ios" {
+        return Ok(());
+    }
 
     if std::fs::exists(&output_executable)?
         && std::fs::read_to_string(&output_version).unwrap_or_default()
