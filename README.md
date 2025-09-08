@@ -67,7 +67,9 @@ This error means either the path you set through `set_verso_path` is wrong (this
 
 #### Not found
 
-Currently verso/servo doesn't support mobile (Android / IOS) target. Only Windows/Macos/Linux binaries are release throug CI
+Currently verso/servo doesn't support mobile (Android / IOS) target. Only Windows/Macos/Linux binaries are released throug CI.
+
+Artifacts can be found on [release page](https://github.com/tauri-apps/verso/releases)
 
 ## Tips
 
