@@ -65,6 +65,10 @@ Also, you can checkout the [documentation](https://versotile-org.github.io/tauri
 
 This error means either the path you set through `set_verso_path` is wrong (this should not be a problem if you're using the `externalBin` setup from the [Usage](#usage)) or the `versoview` exectuable requires a more recent version of glibc that your system doesn't have, in this case, you'll need to either update your linux distro or build `versoview` yourself
 
+#### Not found
+
+Currently verso/servo doesn't support mobile (Android / IOS) target. Only Windows/Macos/Linux binaries are release throug CI
+
 ## Tips
 
 ### Devtools
