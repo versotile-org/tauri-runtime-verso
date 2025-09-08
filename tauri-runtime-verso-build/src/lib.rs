@@ -43,7 +43,7 @@ pub fn get_verso_as_external_bin() -> io::Result<()> {
     let output_version = output_directory.join("versoview-version.txt");
 
     if target_os == "android" || target_os == "ios" {
-        return Err(io::Error::other("Mobile is not supported"));
+        return Err(io::Error::other("Not found"));
     }
 
     if std::fs::exists(&output_executable)?
