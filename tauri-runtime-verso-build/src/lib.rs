@@ -33,12 +33,14 @@ pub use versoview_build;
 /// Downloads and extracts the pre-built versoview executable
 /// to `./versoview/versoview(.exe)` relative to the directory containing your `Cargo.toml` file
 pub fn get_verso_as_external_bin() -> io::Result<()> {
-    let target_triple = std::env::var("TARGET").unwrap();
     let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
-
     if target_os == "android" || target_os == "ios" {
-        return Err(io::Error::other("Versoview doesn't support mobile platforms yet"));
+        return Err(io::Error::other(
+            "Versoview doesn't support mobile platforms yet",
+        ));
     }
+
+    let target_triple = std::env::var("TARGET").unwrap();
 
     let project_directory = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let output_directory = PathBuf::from(project_directory).join("versoview");
