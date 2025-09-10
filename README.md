@@ -65,12 +65,6 @@ Also, you can checkout the [documentation](https://versotile-org.github.io/tauri
 
 This error means either the path you set through `set_verso_path` is wrong (this should not be a problem if you're using the `externalBin` setup from the [Usage](#usage)) or the `versoview` exectuable requires a more recent version of glibc that your system doesn't have, in this case, you'll need to either update your linux distro or build `versoview` yourself
 
-#### Not found
-
-Currently verso/servo doesn't support mobile (Android / IOS) target. Only Windows/Macos/Linux binaries are released throug CI.
-
-Artifacts can be found on [release page](https://github.com/tauri-apps/verso/releases)
-
 ## Tips
 
 ### Devtools
@@ -96,3 +90,11 @@ We currently hard coded the `Origin` header for the custom protocol IPC to work,
 Currently, only the app wide menus on macOS are supported, per window menus are not supported yet
 
 For more, checkout the [documentation](https://versotile-org.github.io/tauri-runtime-verso/tauri_runtime_verso)
+
+#### Mobile
+
+Currently verso/servo doesn't support mobile (Android / IOS) target. Only Windows/Macos/Linux binaries are released throug CI.
+
+Artifacts can be found on [release page](https://github.com/tauri-apps/verso/releases)
+
+If app is targetting both mobile and desktop platforms, you need to create a [tauri conf file for each platform](https://tauri.app/reference/config/#platform-specific-configuration) and add `ExternalBin` only for desktop platforms. 
