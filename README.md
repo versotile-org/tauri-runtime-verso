@@ -89,4 +89,18 @@ We currently hard coded the `Origin` header for the custom protocol IPC to work,
 
 Currently, only the app wide menus on macOS are supported, per window menus are not supported yet
 
+### Mobile
+
+We currently only support Linux, Windows, MacOS, so no mobile (e.g. Android / iOS) support yet
+
+If your app targets both desktop and mobile and want to use this runtime only on desktop, you'll need to:
+
+- Include the crates in this repo only in desktop target dependencies
+- Enable `wry` feature on `tauri` when targeting mobile
+- Use `tauri::Builder::new()` instead of `tauri_runtime_verso::builder()` on mobile
+- Add checks to only run `get_verso_as_external_bin` when targeting desktop
+- Add `externalBin` only for desktop platforms, either through [tauri conf file for each platform](https://tauri.app/reference/config/#platform-specific-configuration) or `--config` flag to target a different configuration file that contains the `externalBin` field
+
+---
+
 For more, checkout the [documentation](https://versotile-org.github.io/tauri-runtime-verso/tauri_runtime_verso)
