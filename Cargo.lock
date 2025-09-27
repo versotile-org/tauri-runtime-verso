@@ -4667,8 +4667,8 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "verso"
-version = "0.0.8"
-source = "git+https://github.com/tauri-apps/verso?rev=31fbb7f4a95ddf69cd3354f144b85eccc7fc6c5c#31fbb7f4a95ddf69cd3354f144b85eccc7fc6c5c"
+version = "0.0.9"
+source = "git+https://github.com/tauri-apps/verso?rev=572f47ca7ead69ce3e8b0c433e5cff237f0514c9#572f47ca7ead69ce3e8b0c433e5cff237f0514c9"
 dependencies = [
  "bincode",
  "dpi",
@@ -4684,13 +4684,13 @@ dependencies = [
 
 [[package]]
 name = "versoview_build"
-version = "0.0.8"
-source = "git+https://github.com/tauri-apps/verso?rev=31fbb7f4a95ddf69cd3354f144b85eccc7fc6c5c#31fbb7f4a95ddf69cd3354f144b85eccc7fc6c5c"
+version = "0.0.9"
+source = "git+https://github.com/tauri-apps/verso?rev=572f47ca7ead69ce3e8b0c433e5cff237f0514c9#572f47ca7ead69ce3e8b0c433e5cff237f0514c9"
 
 [[package]]
 name = "versoview_messages"
 version = "0.0.1"
-source = "git+https://github.com/tauri-apps/verso?rev=31fbb7f4a95ddf69cd3354f144b85eccc7fc6c5c#31fbb7f4a95ddf69cd3354f144b85eccc7fc6c5c"
+source = "git+https://github.com/tauri-apps/verso?rev=572f47ca7ead69ce3e8b0c433e5cff237f0514c9#572f47ca7ead69ce3e8b0c433e5cff237f0514c9"
 dependencies = [
  "dpi",
  "headers",

@@ -12,8 +12,8 @@ members = [
 ]
 
 [workspace.dependencies]
-verso = { git = "https://github.com/tauri-apps/verso", rev = "31fbb7f4a95ddf69cd3354f144b85eccc7fc6c5c" }
-versoview_build = { git = "https://github.com/tauri-apps/verso", rev = "31fbb7f4a95ddf69cd3354f144b85eccc7fc6c5c" }
+verso = { git = "https://github.com/tauri-apps/verso", rev = "572f47ca7ead69ce3e8b0c433e5cff237f0514c9" }
+versoview_build = { git = "https://github.com/tauri-apps/verso", rev = "572f47ca7ead69ce3e8b0c433e5cff237f0514c9" }
 
 [features]
 # Required if you use tauri's macos-private-api feature
