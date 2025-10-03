@@ -65,6 +65,23 @@ Also, you can checkout the [documentation](https://versotile-org.github.io/tauri
 
 This error means either the path you set through `set_verso_path` is wrong (this should not be a problem if you're using the `externalBin` setup from the [Usage](#usage)) or the `versoview` exectuable requires a more recent version of glibc that your system doesn't have, in this case, you'll need to either update your linux distro or build `versoview` yourself
 
+#### Failed to select a version for ...
+
+```
+error: failed to select a version for `tauri-utils`.
+    ... required by package `tauri-runtime-verso v0.1.0 (https://github.com/versotile-org/tauri-runtime-verso.git#ad4815ef)`
+    ... which satisfies git dependency `tauri-runtime-verso` of package `testo v0.1.0 (/src/testo/src-tauri)`
+versions that meet the requirements `=2.6.0` are: 2.6.0
+```
+
+> https://github.com/versotile-org/tauri-runtime-verso/issues/19
+
+To solve this, relax the version selection in your `Cargo.toml` file (e.g. `tauri = "2"` instead of `tauri = "2.8.5"`) and then run `cargo update`
+
+Since we rely on some unstable/non-semver compatible features of Tauri, we pinned a few tauri crates' versions, this sometimes causes package selection conflicts, and usually a `cargo update` would fix that
+
+If you rely on a feature in the latest Tauri which the Verso runtime doesn't support yet, file an [issue](https://github.com/versotile-org/tauri-runtime-verso/issues), or a [pull request](https://github.com/versotile-org/tauri-runtime-verso/pulls) would be much appreciated
+
 ## Tips
 
 ### Devtools
