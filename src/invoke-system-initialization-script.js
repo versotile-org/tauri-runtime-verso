@@ -1,9 +1,40 @@
 // This file is copied and modified from Tauri with a few modifications
 // - Changed `processIpcMessage` to always return a string so we can put it inside of http request header
 // - Changed custom protocol IPC to use header instead of body since we can't get the body in Servo yet
+// - Added window.ipc postMessage shim so the fallback path doesn't crash with "window.ipc is undefined"
 //
 // > ipc-protocol.js: https://github.com/tauri-apps/tauri/blob/dev/crates/tauri/scripts/ipc-protocol.js
 // > process-ipc-message-fn.js: https://github.com/tauri-apps/tauri/blob/dev/crates/tauri/scripts/process-ipc-message-fn.js
+
+// Inject window.ipc compatibility shim for tauri-runtime-verso.
+// tauri-runtime-wry normally provides window.ipc via WRY's with_ipc_handler; since
+// tauri-runtime-verso doesn't use WRY, we must inject it ourselves so the postMessage
+// fallback path (triggered when the custom protocol fetch fails) doesn't crash.
+;(function () {
+	if (typeof window.__VERSO_IPC_HANDLER__ === 'undefined') {
+		window.__VERSO_IPC_HANDLER__ = function (message) {
+			if (
+				window.__TAURI_INTERNALS__ &&
+				typeof window.__TAURI_INTERNALS__.ipcHandler === 'function'
+			) {
+				window.__TAURI_INTERNALS__.ipcHandler(message)
+			} else {
+				console.warn(
+					'[tauri-runtime-verso] IPC postMessage fallback called but no handler is available. ' +
+						'The custom protocol IPC may have failed due to CSP or timing issues.'
+				)
+			}
+		}
+	}
+
+	if (typeof window.ipc === 'undefined') {
+		window.ipc = {
+			postMessage: function (message) {
+				window.__VERSO_IPC_HANDLER__(message)
+			},
+		}
+	}
+})()
 
 ;(function () {
 	const processIpcMessage = function (message) {
