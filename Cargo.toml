@@ -8,16 +8,20 @@ members = [
     "tauri-runtime-verso-build",
     # Examples
     "examples/helloworld",
+    "examples/vendored", 
     "examples/api/src-tauri",
 ]
 
 [workspace.dependencies]
 verso = { git = "https://github.com/tauri-apps/verso", rev = "572f47ca7ead69ce3e8b0c433e5cff237f0514c9" }
+versoview = { git = "https://github.com/tauri-apps/verso", rev = "572f47ca7ead69ce3e8b0c433e5cff237f0514c9" }
 versoview_build = { git = "https://github.com/tauri-apps/verso", rev = "572f47ca7ead69ce3e8b0c433e5cff237f0514c9" }
+
 
 [features]
 # Required if you use tauri's macos-private-api feature
 macos-private-api = ["tauri-runtime/macos-private-api"]
+vendored = ["dep:winit", "dep:rustls", "dep:versoview"]
 
 [dependencies]
 verso = { workspace = true }
@@ -30,6 +34,10 @@ url = "2"
 http = "1"
 percent-encoding = "2"
 log = "0.4"
+# Dependencies used only for vendored feature
+versoview = { workspace = true, optional = true}
+winit = { version = "0.30", optional = true }
+rustls = { version = "0.23", default-features = false, features = ["aws-lc-rs"], optional = true }
 
 [target."cfg(windows)".dependencies]
 windows = "0.61"

@@ -73,6 +73,8 @@ mod event_loop_ext;
 mod monitor;
 mod runtime;
 mod utils;
+#[cfg(feature = "vendored")]
+mod vendored;
 mod webview;
 mod window;
 

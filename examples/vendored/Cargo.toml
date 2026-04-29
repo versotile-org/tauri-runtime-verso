@@ -1,0 +1,22 @@
+[package]
+name = "vendored"
+version = "0.1.0"
+edition = "2024"
+
+[build-dependencies]
+tauri-runtime-verso-build = { path = "../../tauri-runtime-verso-build" }
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", default-features = false, features = [
+    # Default features
+    # "wry",
+    # "compression",
+    "common-controls-v6",
+    # "x11",
+    # "dynamic-acl",
+    # Additional features
+    # "tray-icon",
+] }
+tauri-runtime-verso = { path = "../../", features = ["vendored"] }
+# serde = "1"

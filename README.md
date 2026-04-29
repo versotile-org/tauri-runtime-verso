@@ -96,6 +96,24 @@ tauri_runtime_verso::set_verso_devtools_port(1234);
 
 Then go to `about:debugging` in Firefox and connect to `localhost:1234` there
 
+### Embed verso webview directly into tauri App.
+
+To avoid creating a verso binary next to your tauri app bin and distribute these 2 bin, you can embed directly verso into you tauri app with `vendored` feature
+
+Please note you have to install all servo/verso dependencies because cargo will rebuild webview.
+
+```rust
+tauri_runtime_verso::builder()
+        .invoke_handler(tauri::generate_handler![greet])
+        .setup(|app| {
+            dbg!(app.get_webview_window("main").unwrap().inner_size()).unwrap();
+                        // embed verso webview into app
+            tauri_runtime_verso::vendored::create_embedded_versoview().unwrap();
+            
+            Ok(())
+        })
+```
+
 ## Known limitations
 
 ### Security
